@@ -14,7 +14,7 @@ def news():
     result=[]
     for name,url in FEEDS:
         try:
-            response=requests.get(url,timeout=20,headers={'User-Agent':'RadioMasu/1.0'})
+            response=requests.get(url,timeout=20,headers={'User-Agent':'MasuRadio/1.0'})
             response.raise_for_status()
             feed=feedparser.parse(response.content)
             for entry in feed.entries[:10]:
@@ -60,7 +60,7 @@ def write_script(items):
     episode_title=None
     print('Today focus:',focus,flush=True)
     for number,(topic,sources) in enumerate(topics,1):
-        prompt=f"""RADIO MASU 88.8. Japanese AI developer radio show, {TODAY}.
+        prompt=f"""MASURADIO 88.8. Japanese AI developer radio show, {TODAY}.
 Write ONLY part {number} of 4: {topic}. Return JSON object with 'segments' array. For part 1, also include 'episode_title': a specific, compelling Japanese headline (12-32 characters) describing the actual main story of TODAY, not just the weekday show name. For parts 2-4, no episode_title needed.
 Each segment must be an object with 'speaker' (MASU, NANA, or ZERO) and 'text' (spoken Japanese).
 MASU is sarcastic host, NANA pragmatic engineer, ZERO deadpan absurdist. Alternate speakers.
