@@ -1,4 +1,4 @@
-# RADIO MASU 88.8
+# MASURADIO 88.8
 
 AI-assisted development radio. Daily Japanese MP3 show using Gemini and edge-tts, hosted on GitHub Pages.
 
