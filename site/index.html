@@ -44,8 +44,8 @@ const durationLabel=sec=>Math.round(sec/60)+"分";
 let episodes=[];
 function showEpisode(e,autoplay=false){
   $("current-date").textContent=dateLabel(e.date);
-  $("current-title").textContent=e.title||"RADIO MASU 88.8";
-  $("current-topic").textContent=(e.topics||[]).join(" / ");
+  $("current-title").textContent=e.episode_title||e.title||"RADIO MASU 88.8";
+  $("current-topic").textContent="曜日企画："+((e.topics||[]).join(" / ")||"初回特別放送");
   $("current-meta").replaceChildren();
   const chip=document.createElement("span");chip.className="chip";chip.textContent=durationLabel(e.duration_seconds);$("current-meta").append(chip);
   const player=$("audio");const was=player.getAttribute("src");const src="./"+e.audio;
@@ -63,8 +63,8 @@ function renderArchive(items){
     const b=document.createElement("button");b.type="button";b.className="episode";b.dataset.date=e.date;
     const icon=document.createElement("span");icon.className="play";icon.textContent="▶";icon.setAttribute("aria-hidden","true");
     const details=document.createElement("span");details.className="details";
-    const name=document.createElement("strong");name.textContent=dateLabel(e.date);
-    const sub=document.createElement("small");sub.textContent=(e.topics||[]).join(" / ")||"RADIO MASU 88.8";
+    const name=document.createElement("strong");name.textContent=(e.episode_title||e.title||"RADIO MASU 88.8");
+    const sub=document.createElement("small");sub.textContent=dateLabel(e.date)+" · "+((e.topics||[]).join(" / ")||"初回特別放送");
     details.append(name,sub);
     const dur=document.createElement("span");dur.className="tag";dur.textContent=durationLabel(e.duration_seconds);
     b.append(icon,details,dur);b.addEventListener("click",()=>{showEpisode(e,true);window.scrollTo({top:0,behavior:"smooth"})});
