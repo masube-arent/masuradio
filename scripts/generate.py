@@ -7,7 +7,7 @@ EP=ROOT/'episodes'
 EP.mkdir(exist_ok=True)
 JST=dt.timezone(dt.timedelta(hours=9))
 TODAY=dt.datetime.now(JST).date().isoformat()
-VOICES={'MASU':'ja-JP-KeitaNeural','NANA':'ja-JP-NanamiNeural','ZERO':'ja-JP-DaichiNeural'}
+VOICES={'MASU':'ja-JP-KeitaNeural','NANA':'ja-JP-NanamiNeural','ZERO':'ja-JP-KeitaNeural'}
 FEEDS=[('Codex','https://github.com/openai/codex/releases.atom'),('Claude Code','https://github.com/anthropics/claude-code/releases.atom'),('GitHub','https://github.blog/changelog/feed/')]
 
 def news():
@@ -54,14 +54,16 @@ async def render(segments,tmp):
     paths=[]
     for i,segment in enumerate(segments):
         path=tmp/f'{i:03}.mp3'
-        for attempt in range(3):
+        for attempt in range(6):
             try:
+                print(f'TTS segment={i} speaker={segment["speaker"]} attempt={attempt+1} chars={len(segment["text"])}',flush=True)
                 await edge_tts.Communicate(segment['text'],VOICES[segment['speaker']],rate='+8%').save(str(path))
                 if path.stat().st_size<100:raise RuntimeError('Empty audio')
                 break
-            except Exception:
-                if attempt==2:raise
-                await asyncio.sleep(2*(attempt+1))
+            except Exception as error:
+                print(f'TTS error: {type(error).__name__}: {error}',flush=True)
+                if attempt==5:raise
+                await asyncio.sleep(3*(attempt+1))
         paths.append(path)
     (tmp/'concat.txt').write_text(''.join(f"file '{p.name}'\n" for p in paths),encoding='utf-8')
     output=EP/f'{TODAY}.mp3'
