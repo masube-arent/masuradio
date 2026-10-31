@@ -1,4 +1,4 @@
-name: Daily RADIO MASU
+name: Daily MASURADIO
 on:
   schedule:
     - cron: '10 21 * * *'
