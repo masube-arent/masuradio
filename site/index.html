@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#11101b">
 <meta name="description" content="3人のAI DJが毎日届けるAI開発ラジオ。最新回と過去7回の放送を再生。">
-<title>RADIO MASU 88.8 | AI DEV RADIO</title>
+<title>MASURADIO 88.8 | AI DEV RADIO</title>
 <style>
 :root{color-scheme:dark;--bg:#11101b;--panel:#211d31;--line:#393348;--text:#f6f1ff;--muted:#aaa1bc;--accent:#d8a5ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% 0%,#302043 0%,transparent 46%),var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Noto Sans JP",sans-serif}main{max-width:850px;margin:0 auto;padding:32px 20px 70px}
@@ -17,13 +17,13 @@ h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px s
 <main>
 <header>
 <div class="onair"><span class="dot"></span> DAILY AI DEV RADIO</div>
-<h1>RADIO MASU <span>88.8</span></h1>
+<h1>MASURADIO <span>88.8</span></h1>
 <p>AI開発の最新ニュース、失敗談、珍実験。3人のAI DJが毎日しゃべる、技術は真面目でDJは不真面目なラジオ。</p>
 </header>
 <section class="panel hero" aria-label="放送プレーヤー">
 <div class="eyebrow">NOW PLAYING</div>
 <div id="current-date" class="date" style="margin-top:20px">放送を読み込み中…</div>
-<div id="current-title" class="episode-title">RADIO MASU 88.8</div>
+<div id="current-title" class="episode-title">MASURADIO 88.8</div>
 <div id="current-topic" class="sub"></div>
 <audio id="audio" class="player" controls preload="none"></audio>
 <div class="meta" id="current-meta"></div>
@@ -44,7 +44,7 @@ const durationLabel=sec=>Math.round(sec/60)+"分";
 let episodes=[];
 function showEpisode(e,autoplay=false){
   $("current-date").textContent=dateLabel(e.date);
-  $("current-title").textContent=e.episode_title||e.title||"RADIO MASU 88.8";
+  $("current-title").textContent=e.episode_title||e.title||"MASURADIO 88.8";
   $("current-topic").textContent="曜日企画："+((e.topics||[]).join(" / ")||"初回特別放送");
   $("current-meta").replaceChildren();
   const chip=document.createElement("span");chip.className="chip";chip.textContent=durationLabel(e.duration_seconds);$("current-meta").append(chip);
@@ -63,7 +63,7 @@ function renderArchive(items){
     const b=document.createElement("button");b.type="button";b.className="episode";b.dataset.date=e.date;
     const icon=document.createElement("span");icon.className="play";icon.textContent="▶";icon.setAttribute("aria-hidden","true");
     const details=document.createElement("span");details.className="details";
-    const name=document.createElement("strong");name.textContent=(e.episode_title||e.title||"RADIO MASU 88.8");
+    const name=document.createElement("strong");name.textContent=(e.episode_title||e.title||"MASURADIO 88.8");
     const sub=document.createElement("small");sub.textContent=dateLabel(e.date)+" · "+((e.topics||[]).join(" / ")||"初回特別放送");
     details.append(name,sub);
     const dur=document.createElement("span");dur.className="tag";dur.textContent=durationLabel(e.duration_seconds);
