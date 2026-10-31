@@ -57,10 +57,11 @@ def write_script(items):
       ('明日試せるアクション・まとめ・エンディング',items[:6]),
     ]
     all_segments=[]
+    episode_title=None
     print('Today focus:',focus,flush=True)
     for number,(topic,sources) in enumerate(topics,1):
         prompt=f"""RADIO MASU 88.8. Japanese AI developer radio show, {TODAY}.
-Write ONLY part {number} of 4: {topic}. Return JSON object with 'segments' array.
+Write ONLY part {number} of 4: {topic}. Return JSON object with 'segments' array. For part 1, also include 'episode_title': a specific, compelling Japanese headline (12-32 characters) describing the actual main story of TODAY, not just the weekday show name. For parts 2-4, no episode_title needed.
 Each segment must be an object with 'speaker' (MASU, NANA, or ZERO) and 'text' (spoken Japanese).
 MASU is sarcastic host, NANA pragmatic engineer, ZERO deadpan absurdist. Alternate speakers.
 Write 12-22 segments, about 1300-1800 Japanese characters for THIS part only.\nToday's fixed weekday show: {focus}. Editorial brief: {show_direction}. This weekday format is the PRIMARY topic for every part. Other subjects only as short relevant references. Each week use different examples and angles.\nAvoid repeating yesterday's lead stories, examples, jokes, and practical tips. If a story is ongoing, clearly identify what changed today.\nPrevious 7 days (avoid repetition): {json.dumps(history,ensure_ascii=False)[:4500]}
@@ -86,7 +87,12 @@ Sources: {json.dumps(sources,ensure_ascii=False)}"""
             text=''.join(part.get('text','') for part in candidate.get('content',{}).get('parts',[]))
             try:
                 if finish not in ('STOP','UNKNOWN'):raise ValueError('Gemini finish reason: '+finish)
-                segments=json.loads(text)['segments']
+                parsed=json.loads(text)
+                segments=parsed['segments']
+                if number==1:
+                    candidate_title=parsed.get('episode_title','')
+                    if isinstance(candidate_title,str) and 6<=len(candidate_title)<=60:
+                        episode_title=candidate_title.strip()
                 if not isinstance(segments,list) or len(segments)<8:raise ValueError('Too few segments')
                 for segment in segments:
                     if segment.get('speaker') not in VOICES or not isinstance(segment.get('text'),str) or not 5<=len(segment['text'])<=500:
@@ -101,7 +107,7 @@ Sources: {json.dumps(sources,ensure_ascii=False)}"""
     # Gemini 2.5 Flash paid standard pricing: input $0.30/M, output incl. thinking $2.50/M.
     usage['estimated_usd']=round((usage['prompt_tokens']*0.30+(usage['output_tokens']+usage['thinking_tokens'])*2.50)/1000000,6)
     print('Gemini usage:',json.dumps(usage),flush=True)
-    return all_segments,usage,focus
+    return all_segments,usage,focus,episode_title
 
 async def render(segments,tmp):
     paths=[]
@@ -126,13 +132,13 @@ async def render(segments,tmp):
 
 def main():
     items=news()
-    segments,usage,focus=write_script(items)
+    segments,usage,focus,episode_title=write_script(items)
     with tempfile.TemporaryDirectory() as directory:
         audio,duration=asyncio.run(render(segments,Path(directory)))
     if not 600<=duration<=1200:
         audio.unlink(missing_ok=True)
         raise RuntimeError(f'Duration {duration}s outside 10-20 minute range')
-    metadata={'date':TODAY,'title':f'RADIO MASU 88.8 | {TODAY}','duration_seconds':duration,'audio':f'episodes/{TODAY}.mp3','sources':items,'script':segments,'topics':[focus],'gemini_usage':usage}
+    metadata={'date':TODAY,'title':episode_title or focus,'episode_title':episode_title or focus,'duration_seconds':duration,'audio':f'episodes/{TODAY}.mp3','sources':items,'script':segments,'topics':[focus],'gemini_usage':usage}
     (EP/f'{TODAY}.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2),encoding='utf-8')
     for old in sorted(EP.glob('????-??-??.mp3'))[:-7]:
         old.unlink(missing_ok=True)
