@@ -12,7 +12,7 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   deploy:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
@@ -24,6 +24,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - run: python scripts/build_index.py
+      - name: Validate archive before publishing
+        run: python scripts/verify.py --archive
       - run: mkdir -p public && cp site/index.html public/index.html && cp -r episodes public/episodes
       - uses: actions/upload-pages-artifact@v3
         with:
