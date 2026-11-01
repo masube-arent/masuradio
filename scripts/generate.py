@@ -135,8 +135,23 @@ def main():
     segments,usage,focus,episode_title=write_script(items)
     with tempfile.TemporaryDirectory() as directory:
         audio,duration=asyncio.run(render(segments,Path(directory)))
+    if duration>1200:
+        # Keep the complete episode rather than discarding it when TTS runs long.
+        # Moderate tempo adjustment preserves pitch and avoids cutting the ending.
+        factor=duration/1190
+        if factor>1.30:
+            raise RuntimeError(f'Duration {duration}s requires excessive speedup ({factor:.2f}x)')
+        adjusted=audio.with_name(audio.stem+'.adjusted.mp3')
+        subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-i',str(audio),
+                        '-filter:a',f'atempo={factor:.5f}','-c:a','libmp3lame','-b:a','64k',
+                        str(adjusted)],check=True)
+        adjusted.replace(audio)
+        probe=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration',
+                              '-of','default=noprint_wrappers=1:nokey=1',str(audio)],
+                             check=True,capture_output=True,text=True)
+        duration=round(float(probe.stdout.strip()))
+        print(f'Adjusted episode tempo to {factor:.3f}x; duration={duration}s',flush=True)
     if not 600<=duration<=1200:
-        audio.unlink(missing_ok=True)
         raise RuntimeError(f'Duration {duration}s outside 10-20 minute range')
     metadata={'date':TODAY,'title':episode_title or focus,'episode_title':episode_title or focus,'duration_seconds':duration,'audio':f'episodes/{TODAY}.mp3','sources':items,'script':segments,'topics':[focus],'gemini_usage':usage}
     (EP/f'{TODAY}.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2),encoding='utf-8')
