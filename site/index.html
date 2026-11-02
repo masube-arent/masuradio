@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#11101b">
-<meta name="description" content="3人のAI DJが毎日届けるAI開発ラジオ。最新回と過去7回の放送を再生。">
+<meta name="description" content="女性DJナナがひとりで届けるAIラジオ。ニュースもノリツッコミも、最新回と過去7回を再生。">
 <title>MASURADIO 88.8 | AI DEV RADIO</title>
 <style>
 :root{color-scheme:dark;--bg:#11101b;--panel:#211d31;--line:#393348;--text:#f6f1ff;--muted:#aaa1bc;--accent:#d8a5ff}
@@ -18,7 +18,7 @@ h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px s
 <header>
 <div class="onair"><span class="dot"></span> DAILY AI DEV RADIO</div>
 <h1>MASURADIO <span>88.8</span></h1>
-<p>AI開発の最新ニュース、失敗談、珍実験。3人のAI DJが毎日しゃべる、技術は真面目でDJは不真面目なラジオ。</p>
+<p>AIの新しい話題を、女性DJナナがひとりでお届け。分かりやすい解説に、ときどき自分でボケて自分でツッコむラジオ。</p>
 </header>
 <section class="panel hero" aria-label="放送プレーヤー">
 <div class="eyebrow">NOW PLAYING</div>
@@ -34,7 +34,7 @@ h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px s
 <h2 id="archive-title">放送アーカイブ <span class="sub" style="font-size:.78rem;font-weight:400">最新7回</span></h2>
 <div id="archive" class="archive"><div class="empty">放送一覧を読み込み中…</div></div>
 </section>
-<p class="footer">公式リリースなどを参考にAIが台本と音声を自動生成しています。AIの解説には誤りが含まれる場合があります。</p>
+<p class="footer">公式リリースなどを参考にAIが台本と音声を自動生成しています。AIの解説には誤りが含まれる場合があります。過去の放送には旧3人体制の回も含まれます。</p>
 </main>
 <script>
 "use strict";
@@ -48,6 +48,7 @@ function showEpisode(e,autoplay=false){
   $("current-topic").textContent="曜日企画："+((e.topics||[]).join(" / ")||"初回特別放送");
   $("current-meta").replaceChildren();
   const chip=document.createElement("span");chip.className="chip";chip.textContent=durationLabel(e.duration_seconds);$("current-meta").append(chip);
+  if(e.host==="NANA"){const host=document.createElement("span");host.className="chip";host.textContent="DJ ナナ｜ひとり語り";$("current-meta").append(host)}
   const player=$("audio");const was=player.getAttribute("src");const src="./"+e.audio;
   if(was!==src){player.src=src;player.load()}
   const usage=e.gemini_usage;

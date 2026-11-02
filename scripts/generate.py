@@ -7,7 +7,8 @@ EP=ROOT/'episodes'
 EP.mkdir(exist_ok=True)
 JST=dt.timezone(dt.timedelta(hours=9))
 TODAY=dt.datetime.now(JST).date().isoformat()
-VOICES={'MASU':'ja-JP-KeitaNeural','NANA':'ja-JP-NanamiNeural','ZERO':'ja-JP-KeitaNeural'}
+VOICES={'NANA':'ja-JP-NanamiNeural'}
+TTS_RATE='+0%'  # Natural speed; the previous +8% could sound hurried.
 # Diverse, official RSS/Atom sources. Failures of individual feeds are non-fatal.
 FEEDS=[
     ('OpenAI','https://openai.com/news/rss.xml'),
@@ -183,6 +184,19 @@ def request_gemini(prompt, key, model):
         time.sleep(delay)
     raise RuntimeError('Gemini API retries exhausted')
 
+
+def validate_segments(segments):
+    """Require a single female DJ: never synthesize another speaker."""
+    if not isinstance(segments,list) or len(segments)<6:
+        raise ValueError('Too few solo DJ segments')
+    for segment in segments:
+        if (not isinstance(segment,dict)
+                or segment.get('speaker')!='NANA'
+                or not isinstance(segment.get('text'),str)
+                or not 5<=len(segment['text'])<=500):
+            raise ValueError('Invalid solo DJ segment')
+    return segments
+
 def write_script(items):
     usage={'prompt_tokens':0,'output_tokens':0,'thinking_tokens':0,'total_tokens':0,'api_calls':0}
     history=episode_history()
@@ -210,9 +224,12 @@ def write_script(items):
     for number,(topic,sources) in enumerate(topics,1):
         prompt=f"""MASURADIO 88.8. Japanese AI developer radio show, {TODAY}.
 Write ONLY part {number} of 4: {topic}. Return JSON object with 'segments' array. For part 1, also include 'episode_title': a specific, compelling Japanese headline (12-32 characters) describing the actual main story of TODAY, not just the weekday show name. For parts 2-4, no episode_title needed.
-Each segment must be an object with 'speaker' (MASU, NANA, or ZERO) and 'text' (spoken Japanese).
-MASU is sarcastic host, NANA pragmatic engineer, ZERO deadpan absurdist. Alternate speakers.
-Write 9-13 segments, about 1050-1300 Japanese characters for THIS part only. Avoid long monologues.
+This show now has exactly ONE host: NANA, a warm, clear, witty Japanese female radio presenter. No co-hosts, guests, dialogue, impressions, or imaginary second person.
+Every segment must be an object with 'speaker' exactly 'NANA' and 'text' (natural spoken Japanese). All lines are read by the SAME female voice.
+Write 6-10 segments, about 1050-1300 Japanese characters for THIS part only. Each segment should have a natural spoken paragraph, usually 100-250 characters, with short sentences and breathable punctuation.
+The performance style is ひとりノリツッコミ: NANA occasionally makes a small joke or gets carried away, then immediately corrects herself in her own voice (e.g. 「全部AIに任せちゃえばいい？ いやいや、最後の確認は人間の仕事ですよ！」).
+Keep the jokes light and the explanation easy to follow. At most one such self-correction per part, never force a gag into serious or sensitive news. Do NOT insert stage directions, role labels, forced laughter, fake question-answer dialogue, or pretend that another DJ is present.
+Write as one coherent solo radio talk, not a three-person conversation. The name of the station is MASURADIO 88.8.
 Today's editorial pillar: {focus}. Editorial direction: {show_direction}. Stay within this broad field, but explore multiple independent examples, not just one vendor. Claude Code or Codex must NOT dominate other weekdays.
 Today's planned headline sources (for editorial continuity; no additional factual claims): {json.dumps(lead_titles,ensure_ascii=False)}
 Your allocated sources for THIS PART are below; do not invent any facts or refer to other stories.
@@ -234,15 +251,11 @@ Sources: {json.dumps(sources,ensure_ascii=False)}"""
             try:
                 if finish not in ('STOP','UNKNOWN'):raise ValueError('Gemini finish reason: '+finish)
                 parsed=json.loads(text)
-                segments=parsed['segments']
+                segments=validate_segments(parsed['segments'])
                 if number==1:
                     candidate_title=parsed.get('episode_title','')
                     if isinstance(candidate_title,str) and 6<=len(candidate_title)<=60:
                         episode_title=candidate_title.strip()
-                if not isinstance(segments,list) or len(segments)<8:raise ValueError('Too few segments')
-                for segment in segments:
-                    if segment.get('speaker') not in VOICES or not isinstance(segment.get('text'),str) or not 5<=len(segment['text'])<=500:
-                        raise ValueError('Invalid segment')
                 all_segments.extend(segments)
                 print(f'Script part {number}/4: {len(segments)} segments, {sum(len(x["text"]) for x in segments)} chars',flush=True)
                 break
@@ -262,7 +275,7 @@ async def render(segments,tmp):
         for attempt in range(6):
             try:
                 print(f'TTS segment={i} speaker={segment["speaker"]} attempt={attempt+1} chars={len(segment["text"])}',flush=True)
-                await edge_tts.Communicate(segment['text'],VOICES[segment['speaker']],rate='+8%').save(str(path))
+                await edge_tts.Communicate(segment['text'],VOICES[segment['speaker']],rate=TTS_RATE).save(str(path))
                 if path.stat().st_size<100:raise RuntimeError('Empty audio')
                 break
             except Exception as error:
@@ -308,7 +321,7 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         audio,duration=asyncio.run(render(segments,Path(directory)))
     duration=fit_duration(audio,duration)
-    metadata={'date':TODAY,'title':episode_title or focus,'episode_title':episode_title or focus,'duration_seconds':duration,'audio':f'episodes/{TODAY}.mp3','sources':featured,'featured_sources':featured,'script':segments,'topics':[focus],'gemini_usage':usage}
+    metadata={'date':TODAY,'title':episode_title or focus,'episode_title':episode_title or focus,'duration_seconds':duration,'audio':f'episodes/{TODAY}.mp3','sources':featured,'featured_sources':featured,'script':segments,'topics':[focus],'host':'NANA','gemini_usage':usage}
     (EP/f'{TODAY}.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2),encoding='utf-8')
     for old in sorted(EP.glob('????-??-??.mp3'))[:-7]:
         old.unlink(missing_ok=True)

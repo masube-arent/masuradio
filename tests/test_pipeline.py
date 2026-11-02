@@ -108,5 +108,49 @@ class EpisodeVerificationTests(unittest.TestCase):
                 verify.check_archive(base=root)
 
 
+
+
+class SoloHostTests(unittest.TestCase):
+    def test_only_one_female_voice_at_normal_rate(self):
+        self.assertEqual(generate.VOICES, {'NANA': 'ja-JP-NanamiNeural'})
+        self.assertEqual(generate.TTS_RATE, '+0%')
+
+    def test_valid_solo_segments(self):
+        segments = [{'speaker': 'NANA', 'text': '今日はAIの話題を紹介しますね。'}
+                    for _ in range(6)]
+        self.assertEqual(generate.validate_segments(segments), segments)
+
+    def test_other_dj_is_rejected(self):
+        segments = [{'speaker': 'NANA', 'text': '今日のニュースです。'}
+                    for _ in range(6)]
+        segments[1] = {'speaker': 'MASU', 'text': '司会は交代しましょうか。'}
+        with self.assertRaisesRegex(ValueError, 'Invalid solo DJ'):
+            generate.validate_segments(segments)
+
+    def test_script_generation_prompts_single_host(self):
+        prompts = []
+        def fake_gemini(prompt, key, model):
+            prompts.append(prompt)
+            segments = [{'speaker': 'NANA', 'text': '今日はAIの話題を紹介します。少しだけ冗談を交えて説明しますね。'}
+                        for _ in range(6)]
+            payload = {'segments': segments}
+            if len(prompts) == 1:
+                payload['episode_title'] = '一人で楽しく語るAIニュース'
+            return {'usageMetadata': {},
+                    'candidates': [{
+                        'finishReason': 'STOP',
+                        'content': {'parts': [{'text': json.dumps(payload, ensure_ascii=False)}]}
+                    }]}
+        with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
+             patch.object(generate, 'episode_history', return_value=[]), \
+             patch.object(generate, 'request_gemini', side_effect=fake_gemini):
+            segments, usage, focus, title, featured = generate.write_script([])
+        self.assertEqual(len(prompts), 4)
+        self.assertTrue(all("exactly ONE host: NANA" in prompt for prompt in prompts))
+        self.assertTrue(all(x['speaker'] == 'NANA' for x in segments))
+        self.assertEqual(len(segments), 24)
+        self.assertEqual(title, '一人で楽しく語るAIニュース')
+        self.assertEqual(usage['api_calls'], 4)
+
 if __name__ == '__main__':
     unittest.main()
