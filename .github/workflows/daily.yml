@@ -1,8 +1,17 @@
 name: Daily MASURADIO
 on:
+  # Primary at 06:10 JST, backups at 08:10 and 11:10 JST.
+  # GitHub scheduled triggers are best-effort and can be delayed or dropped.
   schedule:
     - cron: '10 21 * * *'
+    - cron: '10 23 * * *'
+    - cron: '10 2 * * *'
   workflow_dispatch:
+  # Updating this workflow can also recover a day with no scheduled run.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily.yml'
 permissions:
   contents: write
 concurrency:
@@ -20,7 +29,18 @@ jobs:
           cache: pip
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pip install -r requirements.txt
+      - name: Check whether today's episode already exists
+        id: existing
+        run: |
+          if python scripts/verify.py --episode; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Valid episode for today already exists; skipping Gemini and TTS"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Episode absent or invalid; generating today's episode"
+          fi
       - name: Generate episode
+        if: steps.existing.outputs.ready != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: gemini-2.5-flash
@@ -28,6 +48,7 @@ jobs:
       - name: Validate generated episode
         run: python scripts/verify.py --episode
       - name: Commit episode
+        if: steps.existing.outputs.ready != 'true'
         run: |
           set -e
           git config user.name 'github-actions[bot]'
