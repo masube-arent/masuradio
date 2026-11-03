@@ -29,6 +29,11 @@ jobs:
           cache: pip
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pip install -r requirements.txt
+      - name: Refresh latest episodes before checking
+        run: |
+          # Another queued run may already have published today's episode.
+          git fetch origin main
+          git checkout -B main origin/main
       - name: Check whether today's episode already exists
         id: existing
         run: |
