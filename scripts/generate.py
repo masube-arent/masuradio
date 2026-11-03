@@ -49,6 +49,21 @@ SHOWS=[
 ]
 
 
+# Pronunciation dictionary used only for speech synthesis, not for saved scripts.
+# Claude Code can be misread as "クローダーコード" by the Japanese TTS voice.
+_TTS_READINGS = (
+    (re.compile(r'(?<![A-Za-z])Claude[ \\t\\u3000・_-]*Code(?![A-Za-z])', re.IGNORECASE), 'クロードコード'),
+    (re.compile(r'クローダー[・ ]?コード'), 'クロードコード'),
+)
+
+
+def tts_text(text):
+    """Replace ambiguous product names with their intended Japanese readings."""
+    for pattern, reading in _TTS_READINGS:
+        text = pattern.sub(reading, text)
+    return text
+
+
 def read_feed(name, url):
     try:
         response=requests.get(url,timeout=12,headers={'User-Agent':'MASURADIO/1.0'})
@@ -275,7 +290,7 @@ async def render(segments,tmp):
         for attempt in range(6):
             try:
                 print(f'TTS segment={i} speaker={segment["speaker"]} attempt={attempt+1} chars={len(segment["text"])}',flush=True)
-                await edge_tts.Communicate(segment['text'],VOICES[segment['speaker']],rate=TTS_RATE).save(str(path))
+                await edge_tts.Communicate(tts_text(segment['text']),VOICES[segment['speaker']],rate=TTS_RATE).save(str(path))
                 if path.stat().st_size<100:raise RuntimeError('Empty audio')
                 break
             except Exception as error:

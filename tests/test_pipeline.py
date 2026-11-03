@@ -152,5 +152,27 @@ class SoloHostTests(unittest.TestCase):
         self.assertEqual(title, '一人で楽しく語るAIニュース')
         self.assertEqual(usage['api_calls'], 4)
 
+
+class TTSPronunciationTests(unittest.TestCase):
+    def test_claude_code_variants_have_correct_reading(self):
+        for spelling in ('Claude Code', 'ClaudeCode', 'Claude-Code', 'claude code',
+                         'Claude・Code', 'クローダーコード'):
+            with self.subTest(spelling=spelling):
+                self.assertEqual(generate.tts_text(spelling), 'クロードコード')
+
+    def test_preserves_original_script_and_other_names(self):
+        original = 'Claude CodeとCodex、GitHubを比較します。'
+        self.assertEqual(generate.tts_text(original), 'クロードコードとCodex、GitHubを比較します。')
+        self.assertEqual(original, 'Claude CodeとCodex、GitHubを比較します。')
+
+    def test_does_not_rewrite_other_words(self):
+        self.assertEqual(generate.tts_text('Claude models and Claude Codec'),
+                         'Claude models and Claude Codec')
+
+    def test_japanese_context(self):
+        self.assertEqual(generate.tts_text('最新のClaude Code。ClaudeCodeも同じです。'),
+                         '最新のクロードコード。クロードコードも同じです。')
+
+
 if __name__ == '__main__':
     unittest.main()

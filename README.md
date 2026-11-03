@@ -11,3 +11,5 @@ Limits: `edge-tts` is an unofficial external service; outages, missing API credi
 Editorial diversity: 7 distinct weekday pillars (models/research, useful AI apps, automation/agents, audio/video/images, safety/cost, playful experiments, and real-world impact). Official RSS feeds cover multiple AI publishers. Prereleases are filtered, stories are distributed across publishers, and recently featured source URLs are deprioritized. Different program parts use different article sets to avoid repeating the same story.
 
 Voice format: NANA is the only host, synthesized with `ja-JP-NanamiNeural` at normal speaking speed. Gemini writes a solo monologue with occasional natural self-banter (ひとりノリツッコミ), without co-hosts or other voices. Older episodes retain their original three-DJ audio.
+
+Pronunciation: a speech-only dictionary converts `Claude Code`, `ClaudeCode`, and common variants to the Japanese reading `クロードコード` before edge-tts. Source scripts and published metadata retain original English spellings; previously published MP3s are not changed automatically.
