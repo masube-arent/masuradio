@@ -129,7 +129,7 @@ class SoloHostTests(unittest.TestCase):
 
     def test_script_generation_prompts_single_host(self):
         prompts = []
-        def fake_gemini(prompt, key, model):
+        def fake_gemini(prompt, key, model, **kwargs):
             prompts.append(prompt)
             segments = [{'speaker': 'NANA', 'text': '今日はAIの話題を紹介します。少しだけ冗談を交えて説明しますね。'}
                         for _ in range(6)]
@@ -173,6 +173,62 @@ class TTSPronunciationTests(unittest.TestCase):
         self.assertEqual(generate.tts_text('最新のClaude Code。ClaudeCodeも同じです。'),
                          '最新のクロードコード。クロードコードも同じです。')
 
+
+
+class GeminiOutputBudgetTests(unittest.TestCase):
+    def test_flash_has_explicit_thinking_limit(self):
+        response = SimpleNamespace(raise_for_status=lambda: None,
+                                   json=lambda: {'candidates': []})
+        with patch.object(generate.requests, 'post', return_value=response) as post:
+            generate.request_gemini('script prompt', 'test-key', 'gemini-2.5-flash')
+        config = post.call_args.kwargs['json']['generationConfig']
+        self.assertEqual(config['thinkingConfig']['thinkingBudget'], 512)
+        self.assertEqual(config['maxOutputTokens'], 8192)
+
+    def test_retry_can_disable_thinking_and_raise_output_budget(self):
+        response = SimpleNamespace(raise_for_status=lambda: None,
+                                   json=lambda: {'candidates': []})
+        with patch.object(generate.requests, 'post', return_value=response) as post:
+            generate.request_gemini('script prompt', 'test-key', 'gemini-2.5-flash',
+                                    thinking_budget=0, max_output_tokens=12288)
+        config = post.call_args.kwargs['json']['generationConfig']
+        self.assertEqual(config['thinkingConfig'], {'thinkingBudget': 0})
+        self.assertEqual(config['maxOutputTokens'], 12288)
+
+    def test_other_models_do_not_receive_gemini_25_thinking_config(self):
+        response = SimpleNamespace(raise_for_status=lambda: None,
+                                   json=lambda: {'candidates': []})
+        with patch.object(generate.requests, 'post', return_value=response) as post:
+            generate.request_gemini('script prompt', 'test-key', 'other-model')
+        config = post.call_args.kwargs['json']['generationConfig']
+        self.assertNotIn('thinkingConfig', config)
+
+    def test_max_tokens_recovers_on_second_attempt(self):
+        budgets = []
+        valid = [{'speaker': 'NANA', 'text': 'AIを使って実験する際は安全性も確認しましょう。'}
+                 for _ in range(6)]
+        def fake_gemini(prompt, key, model, **kwargs):
+            budgets.append(kwargs['thinking_budget'])
+            if len(budgets) == 1:
+                return {'usageMetadata': {}, 'candidates': [{
+                    'finishReason': 'MAX_TOKENS',
+                    'content': {'parts': [{'text': '{"segments":['}]}
+                }]}
+            return {'usageMetadata': {}, 'candidates': [{
+                'finishReason': 'STOP',
+                'content': {'parts': [{'text': json.dumps({
+                    'segments': valid,
+                    'episode_title': '安全なAI実験について'
+                }, ensure_ascii=False)}]}
+            }]}
+        with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
+             patch.object(generate, 'episode_history', return_value=[]), \
+             patch.object(generate, 'request_gemini', side_effect=fake_gemini), \
+             patch.object(generate.time, 'sleep'):
+            segments, usage, focus, title, featured = generate.write_script([])
+        self.assertEqual(budgets, [512, 0, 512, 512, 512])
+        self.assertEqual(len(segments), 24)
+        self.assertEqual(usage['api_calls'], 5)
 
 if __name__ == '__main__':
     unittest.main()

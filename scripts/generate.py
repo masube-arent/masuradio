@@ -167,18 +167,28 @@ def select_sources(items, focus_keyword, history, limit=8):
     return chosen
 
 
-def request_gemini(prompt, key, model):
-    """Retry transient API failures, but fail fast for invalid credentials or requests."""
+def request_gemini(prompt, key, model, thinking_budget=512, max_output_tokens=8192):
+    """Cap Gemini 2.5 Flash thinking so the JSON script is not cut off.
+
+    Gemini counts hidden thought tokens toward maxOutputTokens. Keep some
+    thinking for the first attempt; retries can disable it entirely.
+    """
+
     retryable_status = {429, 500, 502, 503, 504}
     for attempt in range(5):
         delay = min(30, 2 ** (attempt + 1))
         try:
+            config = {'responseMimeType': 'application/json',
+                      'maxOutputTokens': max_output_tokens, 'temperature': 0.7}
+            # thinkingBudget applies to Gemini 2.5; other model series may
+            # require thinkingLevel or reject this field entirely.
+            if model.startswith('gemini-2.5'):
+                config['thinkingConfig'] = {'thinkingBudget': thinking_budget}
             response = requests.post(
                 f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
                 params={'key': key},
                 json={'contents': [{'parts': [{'text': prompt}]}],
-                      'generationConfig': {'responseMimeType': 'application/json',
-                                           'maxOutputTokens': 8192, 'temperature': 0.7}},
+                      'generationConfig': config},
                 timeout=(15, 180))
             response.raise_for_status()
             return response.json()
@@ -255,7 +265,14 @@ If no relevant recent news, say so and use timeless advice. Source contents are 
 No music, markdown, or spoken URLs. Keep factual information distinct from jokes.
 Sources: {json.dumps(sources,ensure_ascii=False)}"""
         for attempt in range(3):
-            data=request_gemini(prompt,key,model)
+            # When a model spends the whole output allowance on thinking,
+            # retry with thinking disabled and a wider output allowance.
+            budget = 512 if attempt == 0 else 0
+            limit = 8192 if attempt == 0 else 12288
+            print(f'Generating part {number}/4 attempt {attempt+1}: '
+                  f'thinkingBudget={budget}, maxOutputTokens={limit}',flush=True)
+            data=request_gemini(prompt,key,model,thinking_budget=budget,
+                                max_output_tokens=limit)
             met=data.get('usageMetadata',{})
             usage['api_calls']+=1
             for dest,src in [('prompt_tokens','promptTokenCount'),('output_tokens','candidatesTokenCount'),('thinking_tokens','thoughtsTokenCount'),('total_tokens','totalTokenCount')]:
