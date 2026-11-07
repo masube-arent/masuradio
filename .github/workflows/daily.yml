@@ -45,6 +45,17 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Episode absent or invalid; generating today's episode"
           fi
+      - name: Cache date
+        id: day
+        run: echo "today=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+      - name: Restore MASURADIO stage cache
+        if: steps.existing.outputs.ready != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: .radio-cache
+          key: radio-stage-${{ steps.day.outputs.today }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            radio-stage-${{ steps.day.outputs.today }}-
       - name: Generate episode
         if: steps.existing.outputs.ready != 'true'
         env:
@@ -53,6 +64,12 @@ jobs:
         run: python scripts/generate.py
       - name: Validate generated episode
         run: python scripts/verify.py --episode
+      - name: Save MASURADIO stage cache
+        if: always() && steps.existing.outputs.ready == 'false'
+        uses: actions/cache/save@v4
+        with:
+          path: .radio-cache
+          key: radio-stage-${{ steps.day.outputs.today }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Commit episode
         if: steps.existing.outputs.ready != 'true'
         run: |

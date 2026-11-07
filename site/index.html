@@ -10,7 +10,7 @@
 :root{color-scheme:dark;--bg:#11101b;--panel:#211d31;--line:#393348;--text:#f6f1ff;--muted:#aaa1bc;--accent:#d8a5ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 90% 0%,#302043 0%,transparent 46%),var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,"Noto Sans JP",sans-serif}main{max-width:850px;margin:0 auto;padding:32px 20px 70px}
 header{padding:26px 0 32px}.eyebrow{font-size:.78rem;letter-spacing:.18em;font-weight:700;color:var(--accent)}h1{font-size:clamp(2.8rem,9vw,5rem);line-height:1.08;letter-spacing:-.045em;margin:15px 0 18px}h1 span{color:var(--accent)}header p{max-width:530px;color:var(--muted);margin:0}.onair{display:inline-flex;align-items:center;gap:8px;border:1px solid #60446e;border-radius:999px;padding:5px 12px;color:#f4d4ff;font-size:.76rem;font-weight:700}.dot{width:7px;height:7px;background:#e69cff;border-radius:50%}
-h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;margin:22px 0}.hero{padding:28px;background:linear-gradient(140deg,#332544,#211d31 75%)}.date{color:var(--accent);font-size:.82rem;font-weight:700;letter-spacing:.08em}.episode-title{font-size:clamp(1.35rem,4vw,2rem);font-weight:800;line-height:1.35;margin:10px 0}.sub{color:var(--muted);font-size:.9rem}.player{width:100%;margin:18px 0 8px;accent-color:var(--accent)}.archive{display:grid;gap:10px}.episode{width:100%;display:flex;align-items:center;gap:14px;text-align:left;background:#1d1a2b;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;font:inherit}.episode:hover,.episode:focus-visible{border-color:var(--accent);outline:none}.episode[aria-current="true"]{background:#332544;border-color:#9e74ba}.play{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:50%;background:#3b3050;color:#e9c7ff;font-size:1.1rem}.details{flex:1;min-width:0}.details strong{display:block;font-size:.96rem}.details small{display:block;color:var(--muted)}.tag{color:var(--accent);font-size:.72rem;font-weight:700}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.chip{font-size:.75rem;background:#393047;border-radius:999px;padding:4px 10px;color:#e9dff2}a{color:#e2baff;text-underline-offset:3px}.footer{margin-top:36px;color:var(--muted);font-size:.78rem}.empty{padding:22px;color:var(--muted)}#usage{font-size:.79rem;color:var(--muted);margin-top:14px}#source-link{font-size:.85rem}.hidden{display:none!important}@media(max-width:480px){main{padding:20px 15px 55px}.panel{padding:19px;border-radius:20px}.hero{padding:22px}header{padding:24px 0}h1{font-size:3.1rem}}
+h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;margin:22px 0}.hero{padding:28px;background:linear-gradient(140deg,#332544,#211d31 75%)}.date{color:var(--accent);font-size:.82rem;font-weight:700;letter-spacing:.08em}.episode-title{font-size:clamp(1.35rem,4vw,2rem);font-weight:800;line-height:1.35;margin:10px 0}.sub{color:var(--muted);font-size:.9rem}.player{width:100%;margin:18px 0 8px;accent-color:var(--accent)}.archive{display:grid;gap:10px}.episode{width:100%;display:flex;align-items:center;gap:14px;text-align:left;background:#1d1a2b;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;font:inherit}.episode:hover,.episode:focus-visible{border-color:var(--accent);outline:none}.episode[aria-current="true"]{background:#332544;border-color:#9e74ba}.play{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:50%;background:#3b3050;color:#e9c7ff;font-size:1.1rem}.details{flex:1;min-width:0}.details strong{display:block;font-size:.96rem}.details small{display:block;color:var(--muted)}.tag{color:var(--accent);font-size:.72rem;font-weight:700}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.chip{font-size:.75rem;background:#393047;border-radius:999px;padding:4px 10px;color:#e9dff2}a{color:#e2baff;text-underline-offset:3px}.footer{margin-top:36px;color:var(--muted);font-size:.78rem}.empty{padding:22px;color:var(--muted)}#usage{font-size:.79rem;color:var(--muted);margin-top:14px}#source-link{font-size:.85rem}.hidden{display:none!important}.playback-actions{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.playback-actions button,.chapter-list button{color:var(--text);background:#393047;border:1px solid #65536e;border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit}.playback-actions button:focus-visible,.chapter-list button:focus-visible{outline:2px solid #e2baff;outline-offset:2px}.chapter-list{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}.chapter-heading{font-size:.87rem;color:var(--muted);margin-top:16px}@media(max-width:480px){main{padding:20px 15px 55px}.panel{padding:19px;border-radius:20px}.hero{padding:22px}header{padding:24px 0}h1{font-size:3.1rem}}
 </style>
 </head>
 <body>
@@ -26,6 +26,8 @@ h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px s
 <div id="current-title" class="episode-title">MASURADIO 88.8</div>
 <div id="current-topic" class="sub"></div>
 <audio id="audio" class="player" controls preload="none"></audio>
+<div class="playback-actions"><button id="continue-button" type="button" class="hidden">続きから再生</button><button id="restart-button" type="button">最初から再生</button></div>
+<div id="chapter-heading" class="chapter-heading hidden">チャプター（実際の音声位置）</div><div id="chapter-list" class="chapter-list" aria-label="チャプター移動"></div>
 <div class="meta" id="current-meta"></div>
 <div id="usage"></div>
 <a id="source-link" class="hidden" href="#">台本・出典を見る</a>
@@ -36,26 +38,36 @@ h2{font-size:1.18rem;margin:0 0 16px}.panel{background:var(--panel);border:1px s
 </section>
 <p class="footer">公式リリースなどを参考にAIが台本と音声を自動生成しています。AIの解説には誤りが含まれる場合があります。過去の放送には旧3人体制の回も含まれます。</p>
 </main>
+<script src="./playback_state.js"></script>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
 const dateLabel=date=>{const d=new Date(date+"T12:00:00+09:00");return new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short",timeZone:"Asia/Tokyo"}).format(d)};
 const durationLabel=sec=>Math.round(sec/60)+"分";
 let episodes=[];
-function showEpisode(e,autoplay=false){
+let playback;
+function stamp(seconds){const n=Math.floor(seconds);return Math.floor(n/60)+":"+String(n%60).padStart(2,"0")}
+function showChapters(chapters){
+  const root=$("chapter-list");root.replaceChildren();
+  $("chapter-heading").classList.toggle("hidden",!chapters.length);
+  chapters.forEach((c,i)=>{const b=document.createElement("button");b.type="button";
+    b.textContent=stamp(c.start_seconds)+" "+c.title;
+    b.setAttribute("aria-label",c.title+"（"+stamp(c.start_seconds)+"へ移動）");
+    b.addEventListener("click",()=>playback.chapter(i));root.append(b);
+  });
+}
+function showEpisode(e){
   $("current-date").textContent=dateLabel(e.date);
   $("current-title").textContent=e.episode_title||e.title||"MASURADIO 88.8";
   $("current-topic").textContent="曜日企画："+((e.topics||[]).join(" / ")||"初回特別放送");
   $("current-meta").replaceChildren();
   const chip=document.createElement("span");chip.className="chip";chip.textContent=durationLabel(e.duration_seconds);$("current-meta").append(chip);
   if(e.host==="NANA"){const host=document.createElement("span");host.className="chip";host.textContent="DJ ナナ｜ひとり語り";$("current-meta").append(host)}
-  const player=$("audio");const was=player.getAttribute("src");const src="./"+e.audio;
-  if(was!==src){player.src=src;player.load()}
+  playback.select(e)
   const usage=e.gemini_usage;
   $("usage").textContent=usage?"Gemini使用量：入力 "+Number(usage.prompt_tokens||0).toLocaleString()+" / 出力 "+Number(usage.output_tokens||0).toLocaleString()+" / 推論 "+Number(usage.thinking_tokens||0).toLocaleString()+" tokens · API "+Number(usage.api_calls||0)+"回 · 推定 $"+Number(usage.estimated_usd||0).toFixed(4)+"（有料枠の参考値）":"";
   const link=$("source-link");link.href="./episodes/"+encodeURIComponent(e.date)+".json";link.classList.remove("hidden");
   document.querySelectorAll(".episode").forEach(b=>b.setAttribute("aria-current",String(b.dataset.date===e.date)));
-  if(autoplay){player.play().catch(()=>{})}
 }
 function renderArchive(items){
   const root=$("archive");root.replaceChildren();
@@ -68,10 +80,22 @@ function renderArchive(items){
     const sub=document.createElement("small");sub.textContent=dateLabel(e.date)+" · "+((e.topics||[]).join(" / ")||"初回特別放送");
     details.append(name,sub);
     const dur=document.createElement("span");dur.className="tag";dur.textContent=durationLabel(e.duration_seconds);
-    b.append(icon,details,dur);b.addEventListener("click",()=>{showEpisode(e,true);window.scrollTo({top:0,behavior:"smooth"})});
+    b.append(icon,details,dur);b.addEventListener("click",()=>{showEpisode(e);window.scrollTo({top:0,behavior:"smooth"})});
     root.append(b);
   }
 }
+playback=MasuPlayback.createController($("audio"),(() => {try{return localStorage}catch(_){return null}})(),{
+  onResumeAvailability:pos=>{$("continue-button").classList.toggle("hidden",pos===null);
+    $("continue-button").textContent=pos===null?"続きから再生":"続きから再生（"+stamp(pos)+"）"},
+  onChapters:showChapters
+});
+$("continue-button").addEventListener("click",()=>playback.resume());
+$("restart-button").addEventListener("click",()=>playback.startOver());
+$("audio").addEventListener("timeupdate",()=>playback.persist());
+$("audio").addEventListener("pause",()=>playback.persist(true));
+$("audio").addEventListener("loadedmetadata",()=>playback.onMetadata());
+$("audio").addEventListener("ended",()=>playback.onEnded());
+window.addEventListener("pagehide",()=>playback.persist(true));
 fetch("./episodes/index.json?v="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("HTTP "+r.status);return r.json()}).then(items=>{
   episodes=Array.isArray(items)?items.filter(e=>e&&e.date&&e.audio):[];
   renderArchive(episodes);

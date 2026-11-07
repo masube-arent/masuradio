@@ -15,3 +15,13 @@ Voice format: NANA is the only host, synthesized with `ja-JP-NanamiNeural` at no
 Pronunciation: a speech-only dictionary converts `Claude Code`, `ClaudeCode`, and common variants to the Japanese reading `クロードコード` before edge-tts. Source scripts and published metadata retain original English spellings; previously published MP3s are not changed automatically.
 
 Gemini output cutoff protection: On Gemini 2.5 Flash the first pass uses a 512-token thinking budget, and JSON recovery attempts disable thinking and use 12,288 output tokens. This prevents hidden thinking from using the full response budget. Updating the generator automatically triggers a daily recovery run, which skips the episode if it is already valid.
+
+Evidence and resume (2026-11):
+- Feed URLs are normalized and same-event sources combined conservatively.
+- At most seven articles are fetched with timeouts, robots checks and HTTPS limits.
+- Only body-confirmed excerpts can ground detailed discussion; headline-only claims stay labeled.
+- Published source JSON excludes extracted article excerpts.
+- Feed, scripts, TTS, merged audio reuse .radio-cache and GitHub Actions cache.
+- Chapter times use measured audio segment durations; older episodes have no chapters.
+- Playback position is saved per episode on-device; no automatic archive playback.
+- QA: python -m unittest discover -s tests -v; node tests/test_playback.cjs.
