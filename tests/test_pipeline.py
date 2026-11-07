@@ -144,13 +144,14 @@ class SoloHostTests(unittest.TestCase):
         with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini):
-            segments, usage, focus, title, featured = generate.write_script([])
-        self.assertEqual(len(prompts), 4)
-        self.assertTrue(all("exactly ONE host: NANA" in prompt for prompt in prompts))
+            segments, usage, focus, title, featured, starts, labels = generate.write_script([])
+        self.assertEqual(len(prompts), 2)
+        self.assertTrue(all("Exactly ONE Japanese female host NANA" in prompt for prompt in prompts))
         self.assertTrue(all(x['speaker'] == 'NANA' for x in segments))
-        self.assertEqual(len(segments), 24)
+        self.assertEqual(len(segments), 12)
+        self.assertEqual(len(starts), len(labels))
         self.assertEqual(title, '一人で楽しく語るAIニュース')
-        self.assertEqual(usage['api_calls'], 4)
+        self.assertEqual(usage['api_calls'], 2)
 
 
 class TTSPronunciationTests(unittest.TestCase):
