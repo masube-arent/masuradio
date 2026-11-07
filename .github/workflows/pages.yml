@@ -26,7 +26,7 @@ jobs:
       - run: python scripts/build_index.py
       - name: Validate archive before publishing
         run: python scripts/verify.py --archive
-      - run: mkdir -p public && cp site/index.html public/index.html && cp -r episodes public/episodes
+      - run: mkdir -p public && cp site/index.html public/index.html && cp site/playback_state.js public/playback_state.js && cp -r episodes public/episodes
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public
