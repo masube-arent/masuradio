@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.stage_resume import StageCache, probe_audio, chapters_for_parts, verified_publish
+from scripts import generate
 from scripts.verify import check_episode
 
 
@@ -109,6 +110,58 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(points[0]['start_seconds'], 0)
         self.assertAlmostEqual(points[1]['start_seconds'], 31, delta=1)
         self.assertAlmostEqual(points[2]['start_seconds'], 100, delta=1)
+
+
+class FFmpegConcatIntegrationTests(unittest.TestCase):
+    """Exercise the real render->concat->MP3 path with no API, network or TTS."""
+
+    @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'FFmpeg required')
+    def test_two_short_segments_merge_and_resume_from_cache(self):
+        calls = []
+        class SilentTTS:
+            def __init__(self, text, voice, rate):
+                self.text = text
+                self.voice = voice
+                self.rate = rate
+
+            async def save(self, path):
+                calls.append(self.text)
+                subprocess.run(
+                    ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y',
+                     '-f', 'lavfi', '-i', 'anullsrc=r=24000:cl=mono',
+                     '-t', '0.50', '-c:a', 'libmp3lame', '-b:a', '64k', str(path)],
+                    check=True, timeout=30)
+
+        segments = [
+            {'speaker': 'NANA', 'text': '一つ目の検証用音声です。'},
+            {'speaker': 'NANA', 'text': '二つ目の検証用音声です。'}
+        ]
+        with tempfile.TemporaryDirectory() as d, patch.object(
+                generate.edge_tts, 'Communicate', SilentTTS):
+            root = Path(d)
+            work = root / 'work'
+            work.mkdir()
+            output, total, durations = asyncio.run(generate.render(segments, work))
+            manifest = (work / 'concat.txt').read_text(encoding='utf-8')
+            self.assertEqual(len(manifest.splitlines()), 2)
+            self.assertTrue(all(line.startswith("file '") for line in manifest.splitlines()))
+            self.assertNotIn(r'\n', manifest)
+            self.assertGreater(total, 0)
+            self.assertGreater(probe_audio(output), 0.75)
+            self.assertEqual(len(durations), 2)
+            self.assertEqual(len(calls), 2)
+
+            stage = StageCache(root / 'cache', '2026-11-07')
+            first, first_total, first_durations = asyncio.run(
+                generate.render(segments, work, stage=stage))
+            self.assertGreater(probe_audio(first), 0.75)
+            self.assertEqual(len(calls), 4)
+            second, second_total, second_durations = asyncio.run(
+                generate.render(segments, work, stage=stage))
+            self.assertEqual(first, second)
+            self.assertEqual(first_total, second_total)
+            self.assertEqual(first_durations, second_durations)
+            self.assertEqual(len(calls), 4, 'Cached TTS segments must be reused')
 
 
 if __name__ == '__main__':

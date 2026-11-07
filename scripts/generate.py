@@ -400,7 +400,7 @@ async def render(segments, tmp, stage=None):
         concat = tmp / 'concat.txt'
         def quote(p):
             return str(p.resolve()).replace("'", "'\\\\''")
-        concat.write_text(''.join("file '" + quote(p) + "'\\n" for p in paths), encoding='utf-8')
+        concat.write_text(''.join("file '" + quote(p) + "'\n" for p in paths), encoding='utf-8')
         subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y',
                         '-f', 'concat', '-safe', '0', '-i', str(concat),
                         '-c:a', 'libmp3lame', '-b:a', '64k', str(target)], check=True)

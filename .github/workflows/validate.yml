@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
+      - name: Install FFmpeg for real audio integration tests
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pip install -r requirements.txt
       - name: Compile Python
         run: python -m compileall -q scripts tests
