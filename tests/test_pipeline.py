@@ -226,10 +226,11 @@ class GeminiOutputBudgetTests(unittest.TestCase):
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini), \
              patch.object(generate.time, 'sleep'):
-            segments, usage, focus, title, featured = generate.write_script([])
-        self.assertEqual(budgets, [512, 0, 512, 512, 512])
-        self.assertEqual(len(segments), 24)
-        self.assertEqual(usage['api_calls'], 5)
+            segments, usage, focus, title, featured, starts, labels = generate.write_script([])
+        self.assertEqual(budgets, [512, 0, 512])
+        self.assertEqual(len(segments), 12)
+        self.assertEqual(len(starts), 2)
+        self.assertEqual(usage['api_calls'], 3)
 
 if __name__ == '__main__':
     unittest.main()
