@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import datetime as dt
 import html
+import hashlib
+import json
 import ipaddress
 import re
 import unicodedata
@@ -22,7 +24,12 @@ TRACKING = {'fbclid', 'gclid', 'dclid', 'mc_cid', 'mc_eid', 'igshid',
 MAX_ARTICLES = 7
 MAX_BYTES = 240_000
 MIN_BODY_CHARS = 200
-MAX_EXCERPTS = 5
+MAX_EXCERPTS = 8
+MAX_EXCERPT_CHARS = 6000
+# Preserve complete paragraphs, including the qualifications after a number.
+EVIDENCE_SIGNALS = re.compile(
+    r"\d|develop|creat|built|author|licen[cs]e|commercial|language|support|"
+    r"limitation|compar|baseline|median|review|latency|gradium|開発|言語|ライセンス|比較", re.I)
 ENTITY_ALIASES = {
     'claude code': r'claude[\s\-]*code|クロードコード',
     'github copilot': r'(?:github[\s\-]*)?copilot|コパイロット',
@@ -165,16 +172,26 @@ def group_stories(items: list[dict]) -> list[dict]:
 
 
 class _Paragraphs(HTMLParser):
-    def __init__(self):
+    def __init__(self, article_url=""):
         super().__init__(convert_charrefs=True)
+        self.article_url = normalize_url(article_url)
         self.skip = 0
         self.scopes = 0
         self.in_para = 0
         self.current: list[str] = []
         self.scoped: list[str] = []
         self.fallback: list[str] = []
+        self.publication_dates: list[str] = []
+        self.in_jsonld = False
+        self.jsonld: list[str] = []
 
     def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+        if tag == 'meta' and attributes.get('property', '').lower() == 'article:published_time':
+            self.publication_dates.append(attributes.get('content', ''))
+        if tag == 'script' and attributes.get('type', '').lower() == 'application/ld+json':
+            self.in_jsonld = True
+            self.jsonld = []
         if tag in ('script', 'style', 'nav', 'footer', 'header', 'noscript'):
             self.skip += 1
         if tag in ('article', 'main'):
@@ -184,13 +201,40 @@ class _Paragraphs(HTMLParser):
             self.current = []
 
     def handle_data(self, data):
+        if self.in_jsonld:
+            self.jsonld.append(data)
         if self.in_para and not self.skip:
             self.current.append(data)
 
     def handle_endtag(self, tag):
+        if tag == 'script' and self.in_jsonld:
+            self.in_jsonld = False
+            try:
+                payload = json.loads(''.join(self.jsonld))
+                def visit(value):
+                    if isinstance(value, list):
+                        for child in value:
+                            visit(child)
+                    elif isinstance(value, dict):
+                        # Ignore organization/product dates and dateModified.
+                        types = value.get('@type', [])
+                        types = [types] if isinstance(types, str) else types
+                        refs = [value.get('url'), value.get('@id'), value.get('mainEntityOfPage')]
+                        refs = [r.get('@id') if isinstance(r, dict) else r for r in refs]
+                        matches_article = any(isinstance(r, str) and self.article_url
+                                              and normalize_url(r) == self.article_url for r in refs)
+                        if matches_article and any(
+                                t in ('Article', 'NewsArticle', 'BlogPosting', 'TechArticle')
+                                for t in types if isinstance(t, str)):
+                            self.publication_dates.append(value.get('datePublished', ''))
+                        if '@graph' in value:
+                            visit(value['@graph'])
+                visit(payload)
+            except (ValueError, TypeError):
+                pass
         if tag == 'p' and self.in_para:
             line = re.sub(r'\s+', ' ', html.unescape(''.join(self.current))).strip()
-            if len(line) >= 40:
+            if len(line) >= 20:
                 self.fallback.append(line)
                 if self.scopes:
                     self.scoped.append(line)
@@ -200,6 +244,42 @@ class _Paragraphs(HTMLParser):
             self.scopes = max(0, self.scopes - 1)
         if tag in ('script', 'style', 'nav', 'footer', 'header', 'noscript'):
             self.skip = max(0, self.skip - 1)
+
+
+
+def _publication_date(values: list[str]) -> str:
+    """Keep the publisher's calendar date; conflicting metadata is not evidence."""
+    dates = set()
+    for value in values:
+        if not isinstance(value, str) or not re.match(r'^\d{4}-\d{2}-\d{2}(?:T|$| )', value):
+            continue
+        try:
+            dates.add(dt.date.fromisoformat(value[:10]).isoformat())
+        except ValueError:
+            continue
+    return next(iter(dates)) if len(dates) == 1 else ''
+
+
+def select_excerpts(lines: list[str], url: str) -> list[dict]:
+    """Bounded, whole paragraphs: skip oversized blocks rather than invent an ending.
+
+    Cover the introduction and informative paragraphs throughout the article.
+    Selection is not fact verification: the model must still preserve metric,
+    comparison, attribution and other qualifications in each selected excerpt.
+    """
+    indexed = list(enumerate(dict.fromkeys(lines)))
+    ranked = sorted(indexed, key=lambda row: (
+        row[0] != 0, -len(EVIDENCE_SIGNALS.findall(row[1])), row[0]))
+    chosen, size = [], 0
+    for index, text in ranked:
+        if len(chosen) >= MAX_EXCERPTS:
+            break
+        if size + len(text) > MAX_EXCERPT_CHARS:
+            continue
+        digest = hashlib.sha256((normalize_url(url) + '\n' + text).encode()).hexdigest()[:16]
+        chosen.append((index, {'id': 'e_' + digest, 'text': text}))
+        size += len(text)
+    return [excerpt for _, excerpt in sorted(chosen)]
 
 
 def _safe_public_https(url: str) -> bool:
@@ -273,14 +353,15 @@ class ArticleFetcher:
         return rule if isinstance(rule, bool) else rule.can_fetch(USER_AGENT, url)
 
     def enrich(self, item: dict) -> dict:
-        result = {**item, 'evidence_status': 'summary_only', 'facts': []}
+        result = {**item, 'evidence_status': 'summary_only', 'facts': [],
+                  'evidence_excerpts': [], 'article_published_date': ''}
         url = result.get('url', '')
         if not self.allowed(url):
             result['fetch_reason'] = 'robots_disallowed_or_unavailable'
             return result
         try:
             markup = _bounded_get(self.session, url, allow_url=self.allowed)
-            parser = _Paragraphs()
+            parser = _Paragraphs(url)
             parser.feed(markup)
             # Only a recognizable main/article scope is strong enough evidence.
             # Site-wide paragraphs could be advertising, cookie notices or nav.
@@ -289,8 +370,14 @@ class ArticleFetcher:
             if total < MIN_BODY_CHARS:
                 result['fetch_reason'] = 'insufficient_article_text'
                 return result
+            excerpts = select_excerpts(lines, url)
+            if sum(len(x['text']) for x in excerpts) < MIN_BODY_CHARS:
+                result['fetch_reason'] = 'insufficient_bounded_article_text'
+                return result
             result['evidence_status'] = 'body'
-            result['facts'] = [line[:220] for line in lines[:MAX_EXCERPTS]]
+            result['evidence_excerpts'] = excerpts
+            result['facts'] = [x['text'] for x in excerpts]
+            result['article_published_date'] = _publication_date(parser.publication_dates)
             result['fetch_reason'] = 'verified_article_paragraphs'
             return result
         except (requests.RequestException, ValueError, UnicodeError) as error:
@@ -305,13 +392,16 @@ def collect_evidence(stories: list[dict], fetcher=None, max_articles=MAX_ARTICLE
     for pos, item in enumerate(stories):
         collected.append(fetcher.enrich(item) if pos < max_articles else {
             **item, 'evidence_status': 'summary_only', 'facts': [],
+            'evidence_excerpts': [], 'article_published_date': '',
             'fetch_reason': 'article_limit'})
     return collected
 
 
 def public_sources(stories: list[dict]) -> list[dict]:
     """Strip excerpts and raw article bodies from GitHub Pages JSON."""
-    fields = ('source', 'title', 'url', 'date', 'evidence_status', 'fetch_reason')
+    fields = ('source', 'title', 'url', 'date', 'article_published_date',
+              'evidence_status', 'fetch_reason')
     return [{**{k: s[k] for k in fields if k in s},
-             'supporting_sources': s.get('supporting_sources', [])}
+             'supporting_sources': [{k: x[k] for k in fields if k in x}
+                                    for x in s.get('supporting_sources', [])]}
             for s in stories]
