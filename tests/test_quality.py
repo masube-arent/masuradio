@@ -2,7 +2,8 @@
 import unittest
 from unittest.mock import Mock
 from scripts.story_quality import (normalize_url, group_stories, same_story,
-                                   ArticleFetcher, collect_evidence, public_sources)
+                                   ArticleFetcher, collect_evidence, public_sources,
+                                   select_excerpts, MAX_EXCERPT_CHARS, MAX_EXCERPTS)
 
 
 class FakeResponse:
@@ -116,6 +117,68 @@ class QualityTests(unittest.TestCase):
         session.get.side_effect = [FakeResponse('User-agent: *\nAllow: /'), FakeResponse(body)]
         result = ArticleFetcher(session).enrich(self.stories()[0])
         self.assertEqual(result['evidence_status'], 'summary_only')
+
+
+    def enrich_markup(self, markup, **fields):
+        session = Mock()
+        session.get.side_effect = [FakeResponse('User-agent: *\nAllow: /'), FakeResponse(markup)]
+        return ArticleFetcher(session).enrich(dict(self.stories()[0], **fields))
+
+    def test_complete_qualifications_and_late_attribution_are_preserved(self):
+        metric = ('The report examines the full development workflow. ' * 6 +
+                  'Review-stage dwell time increased 441% compared with the baseline; '
+                  'this is elapsed waiting time, not active reviewer working time.')
+        paragraphs = ['An introduction to the current audio and engineering landscape.']
+        paragraphs += ['Background context without specific claims about the product.'] * 6
+        paragraphs += [metric, 'Phonon was developed by Gradium and published on Hugging Face.',
+                       'The model supports English and French; other languages are not evaluated.',
+                       'The license permits research only; commercial use requires permission.']
+        result = self.enrich_markup('<article>' + ''.join('<p>' + p + '</p>' for p in paragraphs) + '</article>')
+        self.assertIn(metric, result['facts'])
+        self.assertIn(paragraphs[-3], result['facts'])
+        self.assertIn(paragraphs[-2], result['facts'])
+        self.assertIn(paragraphs[-1], result['facts'])
+        self.assertEqual(result['facts'], [x['text'] for x in result['evidence_excerpts']])
+        self.assertLessEqual(sum(map(len, result['facts'])), MAX_EXCERPT_CHARS)
+        self.assertLessEqual(len(result['facts']), MAX_EXCERPTS)
+
+    def test_excerpts_skip_oversized_paragraph_without_cutting(self):
+        long = 'This entire paragraph is too long. ' * MAX_EXCERPT_CHARS
+        short = 'Review dwell time rose 441%, not reviewer working time.'
+        excerpts = select_excerpts([long, short], 'https://example.com/article')
+        self.assertEqual([x['text'] for x in excerpts], [short])
+        self.assertEqual(excerpts, select_excerpts([long, short], 'https://example.com/article?utm_source=rss'))
+        self.assertNotEqual(excerpts[0]['id'], select_excerpts([short + ' Changed.'], 'https://example.com/article')[0]['id'])
+
+    def test_publication_date_is_not_feed_or_updated_date(self):
+        markup = ('<meta property="article:published_time" content="2026-11-06T23:30:00-08:00">'
+                  '<meta property="article:modified_time" content="2026-11-07T12:00:00Z">'
+                  '<article><p>' + 'Verified text describing the study and its limitations. ' * 5 + '</p></article>')
+        result = self.enrich_markup(markup, date='2026-11-07')
+        self.assertEqual(result['date'], '2026-11-07')
+        self.assertEqual(result['article_published_date'], '2026-11-06')
+        public = public_sources([dict(result, supporting_sources=[result])])[0]
+        self.assertNotIn('facts', public)
+        self.assertNotIn('evidence_excerpts', public)
+        self.assertNotIn('facts', public['supporting_sources'][0])
+        self.assertNotIn('evidence_excerpts', public['supporting_sources'][0])
+
+    def test_jsonld_article_date_only_and_conflicts_abstain(self):
+        body = '<article><p>' + 'A complete paragraph describing verified article evidence. ' * 5 + '</p></article>'
+        structured = '<script type="application/ld+json">{"@graph":[{"@type":"BlogPosting","url":"https://blog.google/ai/gemini-live-new-voice","datePublished":"2026-11-06","dateModified":"2026-11-07"}]}</script>'
+        self.assertEqual(self.enrich_markup(structured + body)['article_published_date'], '2026-11-06')
+        conflict = '<meta property="article:published_time" content="2026-11-05">'
+        self.assertEqual(self.enrich_markup(conflict + structured + body)['article_published_date'], '')
+        modified = '<script type="application/ld+json">{"@type":"Article","dateModified":"2026-11-07"}</script>'
+        self.assertEqual(self.enrich_markup(modified + body)['article_published_date'], '')
+
+    def test_related_article_dates_are_not_current_article_metadata(self):
+        body = '<article><p>' + 'A complete paragraph describing article evidence. ' * 6 + '</p></article>'
+        unrelated = '<script type="application/ld+json">{"@type":"Article","url":"https://example.org/another-article","datePublished":"2026-11-07"}</script>'
+        unscoped = '<meta itemprop="datePublished" content="2026-11-07"><time itemprop="datePublished" datetime="2026-11-07"></time>'
+        self.assertEqual(self.enrich_markup(unrelated + unscoped + body)['article_published_date'], '')
+        page_meta = '<meta property="article:published_time" content="2026-11-06">'
+        self.assertEqual(self.enrich_markup(unrelated + page_meta + body)['article_published_date'], '2026-11-06')
 
     def test_rejects_private_or_insecure_host(self):
         session = Mock()

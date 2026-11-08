@@ -1,3 +1,4 @@
+from editorial_fixtures import draft, response
 """Offline reliability tests: no Gemini key, Edge TTS, or network needed."""
 import json
 import tempfile
@@ -131,27 +132,23 @@ class SoloHostTests(unittest.TestCase):
         prompts = []
         def fake_gemini(prompt, key, model, **kwargs):
             prompts.append(prompt)
-            segments = [{'speaker': 'NANA', 'text': '今日はAIの話題を紹介します。少しだけ冗談を交えて説明しますね。'}
-                        for _ in range(6)]
-            payload = {'segments': segments}
+            if prompt.startswith('EDITORIAL AUDIT'):
+                return response({'approved': True, 'issues': []})
+            payload = draft(practice='This chapter role: practice' in prompt)
             if len(prompts) == 1:
                 payload['episode_title'] = '一人で楽しく語るAIニュース'
-            return {'usageMetadata': {},
-                    'candidates': [{
-                        'finishReason': 'STOP',
-                        'content': {'parts': [{'text': json.dumps(payload, ensure_ascii=False)}]}
-                    }]}
+            return response(payload)
         with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
-        self.assertEqual(len(prompts), 2)
-        self.assertTrue(all("Exactly ONE Japanese female host NANA" in prompt for prompt in prompts))
+        self.assertEqual(len(prompts), 3)
+        self.assertTrue(all("Exactly ONE Japanese female host NANA" in prompt for prompt in prompts[:2]))
         self.assertTrue(all(x['speaker'] == 'NANA' for x in segments))
         self.assertEqual(len(segments), 12)
         self.assertEqual(len(starts), len(labels))
         self.assertEqual(title, '一人で楽しく語るAIニュース')
-        self.assertEqual(usage['api_calls'], 2)
+        self.assertEqual(usage['api_calls'], 3)
 
 
 class TTSPronunciationTests(unittest.TestCase):
@@ -206,8 +203,6 @@ class GeminiOutputBudgetTests(unittest.TestCase):
 
     def test_max_tokens_recovers_on_second_attempt(self):
         budgets = []
-        valid = [{'speaker': 'NANA', 'text': 'AIを使って実験する際は安全性も確認しましょう。'}
-                 for _ in range(6)]
         def fake_gemini(prompt, key, model, **kwargs):
             budgets.append(kwargs['thinking_budget'])
             if len(budgets) == 1:
@@ -215,22 +210,18 @@ class GeminiOutputBudgetTests(unittest.TestCase):
                     'finishReason': 'MAX_TOKENS',
                     'content': {'parts': [{'text': '{"segments":['}]}
                 }]}
-            return {'usageMetadata': {}, 'candidates': [{
-                'finishReason': 'STOP',
-                'content': {'parts': [{'text': json.dumps({
-                    'segments': valid,
-                    'episode_title': '安全なAI実験について'
-                }, ensure_ascii=False)}]}
-            }]}
+            if prompt.startswith('EDITORIAL AUDIT'):
+                return response({'approved': True, 'issues': []})
+            return response(draft(practice='This chapter role: practice' in prompt))
         with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini), \
              patch.object(generate.time, 'sleep'):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
-        self.assertEqual(budgets, [512, 0, 512])
+        self.assertEqual(budgets, [512, 0, 512, 512])
         self.assertEqual(len(segments), 12)
         self.assertEqual(len(starts), 2)
-        self.assertEqual(usage['api_calls'], 3)
+        self.assertEqual(usage['api_calls'], 4)
 
 if __name__ == '__main__':
     unittest.main()
