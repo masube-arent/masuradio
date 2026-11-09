@@ -142,13 +142,15 @@ class SoloHostTests(unittest.TestCase):
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
-        self.assertEqual(len(prompts), 3)
-        self.assertTrue(all("Exactly ONE Japanese female host NANA" in prompt for prompt in prompts[:2]))
+        self.assertEqual(len(prompts), 2)
+        self.assertIn('This chapter role: practice', prompts[0])
+        self.assertIn('Exactly ONE Japanese female host NANA', prompts[0])
+        self.assertTrue(prompts[1].startswith('EDITORIAL AUDIT'))
         self.assertTrue(all(x['speaker'] == 'NANA' for x in segments))
         self.assertEqual(len(segments), 12)
         self.assertEqual(len(starts), len(labels))
-        self.assertEqual(title, '一人で楽しく語るAIニュース')
-        self.assertEqual(usage['api_calls'], 3)
+        self.assertEqual(title, focus.split('：', 1)[-1] + 'と今日の見出し')
+        self.assertEqual(usage['api_calls'], 2)
 
 
 class TTSPronunciationTests(unittest.TestCase):
@@ -205,6 +207,8 @@ class GeminiOutputBudgetTests(unittest.TestCase):
         budgets = []
         def fake_gemini(prompt, key, model, **kwargs):
             budgets.append(kwargs['thinking_budget'])
+            if not prompt.startswith('EDITORIAL AUDIT'):
+                self.assertIn('This chapter role: practice', prompt)
             if len(budgets) == 1:
                 return {'usageMetadata': {}, 'candidates': [{
                     'finishReason': 'MAX_TOKENS',
@@ -218,10 +222,10 @@ class GeminiOutputBudgetTests(unittest.TestCase):
              patch.object(generate, 'request_gemini', side_effect=fake_gemini), \
              patch.object(generate.time, 'sleep'):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
-        self.assertEqual(budgets, [512, 0, 512, 512])
+        self.assertEqual(budgets, [512, 0, 512])
         self.assertEqual(len(segments), 12)
         self.assertEqual(len(starts), 2)
-        self.assertEqual(usage['api_calls'], 4)
+        self.assertEqual(usage['api_calls'], 3)
 
 if __name__ == '__main__':
     unittest.main()
