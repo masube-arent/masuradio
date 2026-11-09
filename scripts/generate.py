@@ -317,6 +317,9 @@ def write_script(items, stage=None):
                             'usage': part_usage}
                 except (ValueError, TypeError, KeyError) as error:
                     feedback = f'\nPrevious draft rejected: {error}. Correct this and return complete JSON.'
+                    # The API call is stateless. Return bounded numeric repair context
+                    # to the same writer, never to logs, so it can fix the actual sentence.
+                    feedback += editorial.numeric_retry_feedback(error)
                     print(f'Part {number}, attempt {attempt+1}/3: {error}', flush=True)
                     if attempt == 2:
                         raise RuntimeError(f'Could not generate part {number}') from error

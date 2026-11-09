@@ -472,3 +472,55 @@ class EditorialContractTests(unittest.TestCase):
             return response(part)
         self.run_script(fake)
         self.assertEqual(len(calls), 3)
+
+
+    def test_numeric_retry_receives_actual_segment_but_logs_stay_safe(self):
+        import contextlib
+        import io
+        calls = []
+        rejected_text = 'DRAFT_REPAIR_ONLY_SENTINEL: 比較値は999パーセントです。'
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                self.assertNotIn(rejected_text, prompt)
+                return response({'approved': True, 'issues': []})
+            part = report_draft(SOURCE)
+            if len(calls) == 1:
+                part['segments'][2]['text'] = rejected_text
+            else:
+                self.assertIn(rejected_text, prompt)
+                self.assertIn('missing_numbers', prompt)
+                self.assertIn('999', prompt)
+                self.assertIn('allowed_numbers', prompt)
+                self.assertIn('441', prompt)
+                self.assertIn('S1E2', prompt)
+            return response(part)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = self.run_script(fake)
+        self.assertEqual(len(calls), 3)
+        self.assertNotIn(rejected_text, str(result[0]))
+        self.assertNotIn('DRAFT_REPAIR_ONLY_SENTINEL', output.getvalue())
+        self.assertNotIn('999', output.getvalue())
+        self.assertIn('marker=uncited-number', output.getvalue())
+
+    def test_numeric_retry_context_is_not_reused_for_later_malformed_json(self):
+        import contextlib
+        import io
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                return response({'approved': True, 'issues': []})
+            part = report_draft(SOURCE)
+            if len(calls) == 1:
+                part['segments'][2]['text'] = 'STALE_NUMERIC_DRAFT_SENTINEL: 比較値は999パーセントです。'
+                return response(part)
+            if len(calls) == 2:
+                self.assertIn('STALE_NUMERIC_DRAFT_SENTINEL', prompt)
+                return {'candidates': [{'finishReason': 'STOP', 'content': {'parts': [{'text': '{'}]}}]}
+            self.assertNotIn('STALE_NUMERIC_DRAFT_SENTINEL', prompt)
+            return response(part)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.run_script(fake)
+        self.assertEqual(len(calls), 4)
