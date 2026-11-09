@@ -243,7 +243,8 @@ class InformationValueTests(unittest.TestCase):
         previous = report()['segments']
         prompt = editorial.chapter_prompt('2026-11-09', 2, chapters, 'focus', 'direction', [], previous)
         self.assertIn(previous[1]['text'], prompt)
-        self.assertIn('2-cli', prompt)
+        self.assertIn('https://example.org/2', prompt)
+        self.assertIn('S1E1', prompt)
         self.assertNotIn('"id": "0-cli"', prompt)
         self.assertIn('context, NOT evidence', prompt)
         self.assertIn('only the length needed', prompt)

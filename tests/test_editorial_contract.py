@@ -97,7 +97,7 @@ class EditorialContractTests(unittest.TestCase):
                 self.assertNotIn('Unknown headline', prompt)
                 return response({'approved': True, 'issues': []})
             calls.append('report')
-            self.assertIn('phonon-1', prompt)
+            self.assertIn('S1E1', prompt)
             self.assertNotIn('Unknown headline', prompt)
             return response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder, \
@@ -277,7 +277,7 @@ class EditorialContractTests(unittest.TestCase):
             prompts.append(prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
-            self.assertIn('phonon-1', prompt)
+            self.assertIn('S1E1', prompt)
             return response(report_draft(SOURCE))
         result = self.run_script(fake)
         self.assertEqual(len(prompts), 2)
@@ -435,3 +435,40 @@ class EditorialContractTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'Reached evidence'):
                 generate.main()
             fetch.assert_called_once()
+
+    def test_writer_aliases_are_bound_before_validation_and_full_audit(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                part = json.loads(prompt.split('\n')[-1])[0]['draft']
+                self.assertEqual(part['claims'][0]['excerpt_id'], 'phonon-1')
+                self.assertEqual(part['claims'][0]['quote'], SOURCE['evidence_excerpts'][0]['text'])
+                self.assertNotIn('S1E1', prompt)
+                return response({'approved': True, 'issues': []})
+            self.assertEqual(kwargs['temperature'], 0.3)
+            part = report_draft(SOURCE)
+            part['claims'] = [{'segment_index': 1, 'excerpt_id': 'S1E1'},
+                              {'segment_index': 2, 'excerpt_id': 'S1E2'}]
+            return response(part)
+        result = self.run_script(fake)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(result[0]), 4)
+
+    def test_unknown_writer_alias_retries_with_safe_feedback(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                return response({'approved': True, 'issues': []})
+            part = report_draft(SOURCE)
+            part['claims'] = [{'segment_index': 1, 'excerpt_id': 'S1E1'},
+                              {'segment_index': 2, 'excerpt_id': 'S1E2'}]
+            if len(calls) == 1:
+                part['claims'][0]['excerpt_id'] = 'PRIVATE_BAD_ALIAS'
+            else:
+                self.assertIn('Previous draft rejected:', prompt)
+                self.assertNotIn('PRIVATE_BAD_ALIAS', prompt)
+            return response(part)
+        self.run_script(fake)
+        self.assertEqual(len(calls), 3)

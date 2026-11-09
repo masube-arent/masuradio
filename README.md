@@ -63,3 +63,9 @@ Authorized one-time rebuilds:
 - A matching request is pending until a successfully validated/published episode records that ID. Queued runs refresh main under the existing concurrency group, then skip the consumed request. Failures preserve the old episode and may resume cached stages on retry.
 - Requests for a past or future date do not replace today's valid episode. The November 9 quality replacement expires after November 9 and does not change ordinary daily behavior.
 - Creating a new request still requires authorization to replace that public episode and incur Gemini usage. No credentials or expanded GitHub permissions are added.
+
+
+Citation transport recovery (2026-11-09):
+- The writer selects short chapter-local excerpt IDs instead of retyping long source quotes. Code validates each reference and binds it to the original exact, complete excerpt; the semantic audit sees the original source IDs and text.
+- Unknown or malformed references and incorrect explicit legacy quotes still fail. Per-story source binding, numerical checks and the full meaning/usefulness audit remain required; reference validity alone does not prove a claim.
+- Writer temperature is 0.3 for factual reporting. Citation and numeral failures provide fixed diagnostic categories and claim or segment positions without logging arbitrary rejected draft text.
