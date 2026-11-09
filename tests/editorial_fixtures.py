@@ -27,3 +27,23 @@ def draft(practice=False):
 def response(payload, finish='STOP'):
     return {'usageMetadata': {}, 'candidates': [{'finishReason': finish,
             'content': {'parts': [{'text': json.dumps(payload, ensure_ascii=False)}]}}]}
+
+
+SOURCE = {'source': 'Example Research', 'title': 'Phonon research update',
+          'url': 'https://example.org/phonon', 'date': '2026-11-07',
+          'article_published_date': '2026-11-06', 'evidence_status': 'body',
+          'evidence_excerpts': [
+              {'id': 'phonon-1', 'text': 'Phonon is developed by Gradium and presented on Hugging Face.'},
+              {'id': 'review-1', 'text': 'Review-stage dwell time increased by 441% compared with the baseline.'}]}
+
+
+def report_draft(source=None):
+    source = source or SOURCE
+    excerpts = source['evidence_excerpts'][:2]
+    texts = ['こんにちは、記事の新しい内容をお伝えします。'] + [e['text'] for e in excerpts]
+    texts.append('短いニュースをお聞きいただきありがとうございました。')
+    return {'segments': [{'speaker': 'NANA', 'text': t} for t in texts],
+            'claims': [{'segment_index': i + 1, 'excerpt_id': e['id'], 'quote': e['text']}
+                       for i, e in enumerate(excerpts)],
+            'story_points': [{'source_url': source['url'], 'segment_indices': [1, 2]}],
+            'episode_title': '研究発表の新しい内容と確認した条件'}

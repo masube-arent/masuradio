@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 from scripts import editorial, generate
 from scripts.stage_resume import StageCache, digest
-from editorial_fixtures import draft, response
+from editorial_fixtures import draft, response, report_draft
 
 
 SOURCE = {'source': 'Hugging Face', 'title': 'Phonon', 'url': 'https://example.org/phonon',
@@ -16,26 +16,26 @@ SOURCE = {'source': 'Hugging Face', 'title': 'Phonon', 'url': 'https://example.o
 
 
 class EditorialContractTests(unittest.TestCase):
-    def test_reporting_allocations_are_disjoint_and_practice_has_evidence(self):
+    def test_reporting_allocations_are_disjoint_without_forced_practice(self):
         sources = [dict(SOURCE, url=f'https://example.org/{i}') for i in range(5)]
         chapters = editorial.plan_chapters(sources)
-        reported = [s['url'] for _, role, group in chapters if role != 'practice' for s in group]
+        reported = [s['url'] for _, role, group in chapters for s in group]
         self.assertEqual(len(reported), len(set(reported)))
-        self.assertEqual(chapters[-1][2], sources[:1])
+        self.assertEqual(set(reported), {s['url'] for s in sources})
+        self.assertTrue(all(c[1] == 'report' for c in chapters))
 
     def test_prompt_preserves_prior_script_dates_and_attribution_rules(self):
         chapters = editorial.plan_chapters([SOURCE])
-        prompt = editorial.chapter_prompt('2026-11-08', 2, chapters, 'focus', 'direction', [], draft()['segments'])
+        prompt = editorial.chapter_prompt('2026-11-08', 1, chapters, 'focus', 'direction', [], draft()['segments'])
         for expected in ('441%', 'Gradium', 'reviewer work time', '2026-11-06', 'feed_date',
                          'License', 'Japanese', draft()['segments'][1]['text']):
             self.assertIn(expected, prompt)
         self.assertIn('not a 441% reduction', prompt)
 
     def test_unknown_body_does_not_authorize_reporting(self):
-        chapters = editorial.plan_chapters([dict(SOURCE, evidence_status='summary_only')])
-        self.assertNotIn('report', [c[1] for c in chapters])
-        self.assertEqual(chapters[-1][2], [])
-        self.assertEqual(editorial.source_evidence(chapters[0][2])[0]['excerpts'], [])
+        with self.assertRaises(ValueError):
+            editorial.plan_chapters([dict(SOURCE, evidence_status='summary_only')])
+        self.assertEqual(editorial.source_evidence([dict(SOURCE, evidence_status='summary_only')])[0]['excerpts'], [])
 
     def test_brief_template_handles_zero_one_and_many_headlines(self):
         for count in (0, 1, 3, 7):
@@ -83,59 +83,41 @@ class EditorialContractTests(unittest.TestCase):
         editorial.validate_editorial(repeated, [], [], 1, 'brief')
         self.assertIn('読み上げられる見出しを確認できませんでした', repeated['segments'][3]['text'])
 
-    def test_mixed_evidence_uses_fixed_brief_and_audits_all_chapters(self):
+    def test_mixed_evidence_reports_only_body_and_audits_complete_news(self):
         headlines = [dict(SOURCE, evidence_status='summary_only', evidence_excerpts=[],
-                          title=title, url=f'https://example.org/headline/{i}')
-                     for i, title in enumerate([
-                         'Audio codec research', 'Medical imaging assistant', 'Education lesson planner',
-                         'Robotics walking demo', 'Database privacy controls',
-                         'Weather prediction update', 'Compiler optimization release'])]
+                          title=f'Unknown headline {i}', url=f'https://example.org/headline/{i}')
+                     for i in range(7)]
         calls = []
         def fake(prompt, *args, **kwargs):
-            self.assertNotIn('This chapter role: brief', prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 calls.append('audit')
                 chapters = json.loads(prompt.split('\n')[-1])
-                self.assertEqual([c['role'] for c in chapters], ['brief', 'report', 'practice'])
-                self.assertEqual(chapters[0]['draft']['claims'], [])
-                self.assertTrue(all(v == 0 for v in chapters[0]['draft']['usage'].values()))
-                self.assertIn('未確認の見出しとして', chapters[0]['draft']['segments'][3]['text'])
-                self.assertEqual(chapters[0]['evidence'][0]['excerpts'], [])
+                self.assertEqual([c['role'] for c in chapters], ['report'])
+                self.assertEqual(chapters[0]['draft']['story_points'][0]['source_url'], SOURCE['url'])
+                self.assertNotIn('Unknown headline', prompt)
                 return response({'approved': True, 'issues': []})
-            self.assertIn('phonon-1', prompt)
-            if 'This chapter role: practice' in prompt:
-                calls.append('practice')
-                return response(draft(True))
             calls.append('report')
-            part = draft()
-            part['segments'][0]['text'] = 'ここからは記事本文を確認できた話題です。'
-            part['segments'][1]['text'] = '掲載日は11月6日です。'
-            part['segments'][2]['text'] = 'Phononの開発元はGradiumと記事で説明されています。'
-            part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
-                               'quote': SOURCE['evidence_excerpts'][0]['text']}]
-            return response(part)
+            self.assertIn('phonon-1', prompt)
+            self.assertNotIn('Unknown headline', prompt)
+            return response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder, \
              patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE] + headlines):
             stage = StageCache(folder, '2026-11-09')
-            first = self.run_script(fake, stage)
-            second = self.run_script(fake, stage)
-        self.assertEqual(calls, ['report', 'practice', 'audit'])
+            first = self.run_script(fake, stage, evidence=None)
+            second = self.run_script(fake, stage, evidence=None)
+        self.assertEqual(calls, ['report', 'audit'])
         self.assertEqual(first, second)
-        self.assertEqual(len(first[4]), 8)
-        self.assertEqual(first[-1], ['ニュース', '根拠と深掘り', '実践・まとめ'])
-        self.assertEqual(first[1]['api_calls'], 3)
+        self.assertEqual([s['url'] for s in first[4]], [SOURCE['url']])
+        self.assertEqual(len(first[-1]), 1)
+        self.assertEqual(first[1]['api_calls'], 2)
 
-    def test_headline_only_does_not_call_writer_for_brief(self):
-        calls = []
-        def fake(prompt, *args, **kwargs):
-            self.assertNotIn('This chapter role: brief', prompt)
-            calls.append('audit' if prompt.startswith('EDITORIAL AUDIT') else 'practice')
-            return response({'approved': True, 'issues': []}) if calls[-1] == 'audit' else response(draft(True))
+    def test_headline_only_fails_before_any_paid_call(self):
         with patch.object(generate.story_quality, 'collect_evidence',
-                          return_value=[dict(SOURCE, evidence_status='summary_only')]):
-            result = self.run_script(fake)
-        self.assertEqual(calls, ['practice', 'audit'])
-        self.assertEqual(result[-1], ['ニュース', '実践・まとめ'])
+                          return_value=[dict(SOURCE, evidence_status='summary_only')]), \
+             patch.object(generate, 'request_gemini') as api:
+            with self.assertRaises(ValueError):
+                generate.write_script([])
+        api.assert_not_called()
 
     def test_rejects_repeated_opening_and_sentence(self):
         with self.assertRaisesRegex(ValueError, 'opening'):
@@ -206,10 +188,11 @@ class EditorialContractTests(unittest.TestCase):
         part['segments'][0]['text'] = 'こんにちは、MASURADIO 88.8、NANAです。'
         editorial.validate_editorial(part, [], [], 1, 'brief')
 
-    def test_practice_prompt_change_reuses_completed_earlier_chapters(self):
-        headline = dict(SOURCE, title='Database privacy controls', url='https://example.org/privacy',
-                        evidence_status='summary_only', evidence_excerpts=[])
-        calls, failed = [], False
+    def test_later_chapter_prompt_change_reuses_completed_earlier_chapters(self):
+        # A continuation rejection should not replay a completed writing call.
+        calls = []
+        chapters = [('先の話題', 'report', [SOURCE]), ('次の話題', 'practice', [])]
+        failed = False
         def fake(prompt, *args, **kwargs):
             nonlocal failed
             if prompt.startswith('EDITORIAL AUDIT'):
@@ -217,71 +200,58 @@ class EditorialContractTests(unittest.TestCase):
                 return response({'approved': True, 'issues': []})
             if 'This chapter role: practice' in prompt:
                 if not failed:
-                    self.assertNotIn('Practice continuation:', prompt)
                     failed = True
-                    calls.append('old-practice-failed')
-                    raise RuntimeError('Previous practice failed')
-                self.assertIn('Practice continuation:', prompt)
-                calls.append('new-practice')
+                    calls.append('later-failed')
+                    raise RuntimeError('Later chapter failed')
+                calls.append('later-retry')
                 return response(draft(True))
-            self.assertNotIn('Practice continuation:', prompt)
             calls.append('report')
-            part = draft()
-            part['segments'][0]['text'] = 'ここからは記事本文を確認できた話題です。'
-            part['segments'][2]['text'] = 'Phononの開発元はGradiumと記事で説明されています。'
-            part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
-                               'quote': SOURCE['evidence_excerpts'][0]['text']}]
-            return response(part)
-        current_prompt = editorial.chapter_prompt
-        def previous_prompt(*args, **kwargs):
-            return current_prompt(*args, **kwargs).split('\nPractice continuation:')[0]
+            return response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder, \
-             patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE, headline]), \
-             patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
+             patch.object(editorial, 'plan_chapters', return_value=chapters):
             stage = StageCache(folder, '2026-11-09')
-            with patch.object(editorial, 'chapter_prompt', side_effect=previous_prompt):
-                with self.assertRaisesRegex(RuntimeError, 'Previous practice failed'):
-                    self.run_script(fake, stage)
+            with self.assertRaisesRegex(RuntimeError, 'Later chapter failed'):
+                self.run_script(fake, stage)
             self.run_script(fake, stage)
-        self.assertEqual(brief.call_count, 1)
-        self.assertEqual(calls, ['report', 'old-practice-failed', 'new-practice', 'audit'])
+        self.assertEqual(calls, ['report', 'later-failed', 'later-retry', 'audit'])
 
     def test_reintroduction_retry_receives_safe_actionable_diagnostics(self):
         calls = []
+        chapters = [('先の話題', 'report', [SOURCE]), ('次の話題', 'practice', [])]
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
+            if 'This chapter role: report' in prompt:
+                return response(report_draft(SOURCE))
             part = draft(True)
-            if len(calls) == 1:
+            if len(calls) == 2:
                 part['segments'][-1]['text'] = 'NANAです。また次回お会いしましょう。'
             else:
                 self.assertIn('segment_index=5, marker=host-introduction', prompt)
-                self.assertIn('reserve station ID for the final practice farewell', prompt)
                 part['segments'][-1]['text'] = 'MASURADIO 88.8、NANAがお届けしました。また次回。'
             return response(part)
-        self.run_script(fake)
-        self.assertEqual(len(calls), 3)
+        with patch.object(editorial, 'plan_chapters', return_value=chapters):
+            self.run_script(fake)
+        self.assertEqual(len(calls), 4)
 
     def test_exact_quote_and_segment_binding_required(self):
-        part = draft()
-        part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1', 'quote': 'invented unsupported attribution'}]
+        part = report_draft(SOURCE)
+        part['claims'][0]['quote'] = 'invented unsupported attribution'
         with self.assertRaisesRegex(ValueError, 'exact excerpt'):
             editorial.validate_editorial(part, [SOURCE], [], 1, 'report')
         part['claims'][0]['quote'] = SOURCE['evidence_excerpts'][0]['text']
         editorial.validate_editorial(part, [SOURCE], [], 1, 'report')
-        part['segments'][2]['text'] = '新しいモデルは利用料が123ドルです。'
+        part['segments'][1]['text'] = '新しいモデルは利用料が123ドルです。'
         with self.assertRaisesRegex(ValueError, 'number'):
             editorial.validate_editorial(part, [SOURCE], [], 1, 'report')
 
     def test_reporting_opening_and_metadata_dates_are_not_article_statistics(self):
-        part = draft()
+        part = report_draft(SOURCE)
         part['segments'][0]['text'] = 'こんにちは、MASURADIO 88.8、2026年11月8日の放送です。'
-        part['segments'][1]['text'] = '掲載日は11月6日です。'
-        part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
-                           'quote': SOURCE['evidence_excerpts'][0]['text']}]
+        part['segments'][-1]['text'] = '掲載日は11月6日です。'
         editorial.validate_editorial(part, [SOURCE], [], 1, 'report', '2026-11-08')
-        part['segments'][1]['text'] = '掲載日は11月7日です。'
+        part['segments'][-1]['text'] = '掲載日は11月7日です。'
         with self.assertRaisesRegex(ValueError, 'number'):
             editorial.validate_editorial(part, [SOURCE], [], 1, 'report', '2026-11-08')
 
@@ -292,34 +262,26 @@ class EditorialContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Practice'):
             editorial.validate_editorial(part, [], [], 2, 'practice')
 
-    def run_script(self, fake, stage=None):
-        with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-only'}), \
+    def run_script(self, fake, stage=None, evidence=True):
+        from contextlib import nullcontext
+        evidence_patch = patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE]) if evidence else nullcontext()
+        with evidence_patch, patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-only'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
              patch.object(generate, 'request_gemini', side_effect=fake), \
              patch.object(generate.time, 'sleep'):
             return generate.write_script([], stage)
 
-    def test_body_confirmed_first_chapter_and_practice_share_evidence(self):
+    def test_body_confirmed_chapter_is_not_retold_as_practice(self):
         prompts = []
         def fake(prompt, *args, **kwargs):
             prompts.append(prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
-            if 'This chapter role: practice' in prompt:
-                self.assertIn('phonon-1', prompt)
-                self.assertIn('Gradium', prompt)
-                return response(draft(True))
-            part = draft()
-            part['segments'][0]['text'] = 'こんにちは、MASURADIO 88.8です。'
-            part['segments'][1]['text'] = '掲載日は11月6日です。'
-            part['segments'][2]['text'] = 'Phononの開発元はGradiumと記事で説明されています。'
-            part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
-                               'quote': SOURCE['evidence_excerpts'][0]['text']}]
-            return response(part)
-        with patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE]):
-            result = self.run_script(fake)
-        self.assertEqual(len(prompts), 3)
-        self.assertEqual(result[-1], ['根拠と深掘り', '実践・まとめ'])
+            self.assertIn('phonon-1', prompt)
+            return response(report_draft(SOURCE))
+        result = self.run_script(fake)
+        self.assertEqual(len(prompts), 2)
+        self.assertEqual(len(result[-1]), 1)
         self.assertNotIn('evidence_excerpts', result[0][0])
 
     def test_semantic_audit_rejection_stops_before_audio(self):
@@ -327,7 +289,7 @@ class EditorialContractTests(unittest.TestCase):
             if prompt.startswith('EDITORIAL AUDIT'):
                 self.assertIn('Check every factual statement', prompt)
                 return response({'approved': False, 'issues': ['Review dwell time confused with work time']})
-            return response(draft('This chapter role: practice' in prompt))
+            return response(report_draft(SOURCE))
         with self.assertRaisesRegex(RuntimeError, 'Editorial audit rejected'):
             self.run_script(fake)
 
@@ -336,7 +298,7 @@ class EditorialContractTests(unittest.TestCase):
                       response({'approved': True, 'issues': ['unresolved']}),
                       response({'approved': True, 'issues': []}, finish='MAX_TOKENS')):
             def fake(prompt, *args, **kwargs):
-                return value if prompt.startswith('EDITORIAL AUDIT') else response(draft('This chapter role: practice' in prompt))
+                return value if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
             with self.subTest(value=value), self.assertRaises(RuntimeError):
                 self.run_script(fake)
 
@@ -344,7 +306,7 @@ class EditorialContractTests(unittest.TestCase):
         calls = []
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
-            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(draft('This chapter role: practice' in prompt))
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder:
             stage = StageCache(folder, '2026-11-08')
             first = self.run_script(fake, stage)
@@ -357,42 +319,37 @@ class EditorialContractTests(unittest.TestCase):
         calls = []
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
-            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(draft(True))
-        with tempfile.TemporaryDirectory() as folder, \
-             patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
+        with tempfile.TemporaryDirectory() as folder:
             stage = StageCache(folder, '2026-11-09')
             self.run_script(fake, stage)
             with patch.object(editorial, 'VERSION', editorial.VERSION + '-next'):
                 self.run_script(fake, stage)
-        self.assertEqual(brief.call_count, 2)
-        self.assertEqual(len(calls), 4, 'Practice and audit must be rerun for a new editorial version')
+        self.assertEqual(len(calls), 4, 'Changed editorial version regenerates writing and audit')
 
-    def test_cached_brief_is_validated_before_reuse(self):
+    def test_cached_report_is_validated_before_reuse(self):
         calls = []
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
-            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(draft(True))
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder:
             stage = StageCache(folder, '2026-11-09')
             first = self.run_script(fake, stage)
             path = next(Path(folder).rglob('script_part_1-*.json'))
             record = json.loads(path.read_text())
-            record['value']['claims'] = [{'segment_index': 0, 'excerpt_id': 'invented',
-                                         'quote': 'This is not body evidence.'}]
+            record['value']['story_points'][0]['segment_indices'] = [1]
             record['checksum'] = digest(record['value'])
             path.write_text(json.dumps(record))
-            with patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
-                second = self.run_script(fake, stage)
-            self.assertEqual(brief.call_count, 1)
-            self.assertEqual(json.loads(path.read_text())['value']['claims'], [])
+            second = self.run_script(fake, stage)
+            self.assertEqual(json.loads(path.read_text())['value']['story_points'][0]['segment_indices'], [1, 2])
         self.assertEqual(first, second)
-        self.assertEqual(len(calls), 2, 'Rebuilding the same brief must not repeat paid calls')
+        self.assertEqual(len(calls), 3, 'Invalid cached report is rebuilt; identical audit resumes')
 
     def test_rejected_audit_is_cached_without_repeated_paid_calls(self):
         calls = []
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
-            return response({'approved': False, 'issues': ['Unsupported attribution']}) if prompt.startswith('EDITORIAL AUDIT') else response(draft('This chapter role: practice' in prompt))
+            return response({'approved': False, 'issues': ['Unsupported attribution']}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
         with tempfile.TemporaryDirectory() as folder:
             stage = StageCache(folder, '2026-11-08')
             for _ in range(2):
@@ -400,17 +357,81 @@ class EditorialContractTests(unittest.TestCase):
                     self.run_script(fake, stage)
         self.assertEqual(len(calls), 2)
 
-    def test_invalid_practice_retries_with_actionable_feedback(self):
+    def test_invalid_story_points_retry_with_actionable_feedback(self):
         calls = []
         def fake(prompt, *args, **kwargs):
             calls.append(prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
-            part = draft('This chapter role: practice' in prompt)
+            part = report_draft(SOURCE)
             if len(calls) == 1:
-                del part['practice']
+                del part['story_points']
             if len(calls) == 2:
-                self.assertIn('Previous draft rejected: Practice', prompt)
+                self.assertIn('Previous draft rejected:', prompt)
             return response(part)
         self.run_script(fake)
         self.assertEqual(len(calls), 3)
+
+    def test_zero_evidence_failure_is_not_cached_and_can_recover(self):
+        unknown = dict(SOURCE, evidence_status='summary_only', evidence_excerpts=[],
+                       fetch_reason='request_timeout')
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(generate.story_quality, 'collect_evidence', side_effect=[[unknown], [SOURCE]]) as collect:
+            stage = StageCache(folder, '2026-11-09')
+            with self.assertRaisesRegex(ValueError, 'No body-confirmed'):
+                self.run_script(fake, stage, evidence=None)
+            self.assertEqual(calls, [])
+            self.assertEqual(list(Path(folder).rglob('article_evidence-*.json')), [])
+            result = self.run_script(fake, stage, evidence=None)
+            self.assertEqual(collect.call_count, 2)
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(len(result[4]), 1)
+
+    def test_existing_zero_body_cache_is_invalidated_before_writing(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(report_draft(SOURCE))
+        with tempfile.TemporaryDirectory() as folder:
+            stage = StageCache(folder, '2026-11-09')
+            self.run_script(fake, stage)
+            path = next(Path(folder).rglob('article_evidence-*.json'))
+            record = json.loads(path.read_text())
+            record['value'][0]['evidence_status'] = 'summary_only'
+            record['value'][0]['evidence_excerpts'] = []
+            record['checksum'] = digest(record['value'])
+            path.write_text(json.dumps(record))
+            with patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE]) as collect:
+                self.run_script(fake, stage, evidence=None)
+                collect.assert_called_once()
+            self.assertEqual(len(calls), 2, 'Identical recovered evidence resumes valid scripts and audit')
+
+    def test_empty_feed_snapshot_is_not_cached_and_retries_next_run(self):
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(generate, 'ROOT', Path(folder)), \
+             patch.object(generate, 'news', side_effect=[[], [SOURCE]]) as fetch, \
+             patch.object(generate, 'write_script', side_effect=RuntimeError('Reached evidence')) as writer:
+            with self.assertRaisesRegex(ValueError, 'feed_snapshot: stage validation failed'):
+                generate.main()
+            writer.assert_not_called()
+            self.assertEqual(list(Path(folder).rglob('feed_snapshot-*.json')), [])
+            with self.assertRaisesRegex(RuntimeError, 'Reached evidence'):
+                generate.main()
+            self.assertEqual(fetch.call_count, 2)
+            writer.assert_called_once()
+
+    def test_existing_empty_feed_snapshot_is_invalidated(self):
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(generate, 'ROOT', Path(folder)), \
+             patch.object(generate, 'news', return_value=[SOURCE]) as fetch, \
+             patch.object(generate, 'write_script', side_effect=RuntimeError('Reached evidence')):
+            stage = StageCache(Path(folder) / '.radio-cache', generate.TODAY)
+            stage.json('feed_snapshot', {'day': generate.TODAY, 'feeds': generate.FEEDS,
+                                        'collection_version': 'v1'}, lambda: [])
+            with self.assertRaisesRegex(RuntimeError, 'Reached evidence'):
+                generate.main()
+            fetch.assert_called_once()

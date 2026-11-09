@@ -168,7 +168,7 @@ def select_sources(items, focus_keyword, history, limit=8):
     take(on_topic,limit//2)
     take(other,limit)
     take(candidates,limit)
-    # If feed availability is limited, still make a show using timeless examples.
+    # Evidence gathering and the editorial gate decide whether these can support news.
     return chosen
 
 
@@ -217,8 +217,8 @@ def request_gemini(prompt, key, model, thinking_budget=512, max_output_tokens=81
 
 def validate_segments(segments):
     """Require a single female DJ: never synthesize another speaker."""
-    if not isinstance(segments,list) or len(segments)<6:
-        raise ValueError('Too few solo DJ segments')
+    if not isinstance(segments,list) or not 2 <= len(segments) <= 9:
+        raise ValueError('Expected 2-9 concise solo DJ segments')
     for segment in segments:
         if (not isinstance(segment,dict)
                 or segment.get('speaker')!='NANA'
@@ -230,20 +230,28 @@ def validate_segments(segments):
 def write_script(items, stage=None):
     """Resume validated chapters, then audit the complete script before speech.
 
-    Keep unaffected chapter prompts stable when fixing a later chapter so a
-    recovery run does not repeat their successful paid generation calls.
+    Only verified stories are spoken. No body evidence fails before paid writing,
+    instead of filling a daily slot with headlines and generic exercises.
     """
-    history = episode_history()
+    history = [episode for episode in episode_history() if episode.get('date') != TODAY]
     focus, show_direction, focus_keyword = SHOWS[dt.datetime.now(JST).weekday()]
     selected = select_sources(story_quality.group_stories(items), focus_keyword, history)
-    # Collect article text from a bounded shortlist, never entire sites.
+    # Collect article text from a bounded shortlist, never entire sites. An empty
+    # evidence result must not pin transient outages into later recovery runs.
+    def collect_reportable_evidence():
+        reviewed = story_quality.collect_evidence(selected)
+        editorial.plan_chapters(reviewed)  # Fail before saving an unusable snapshot.
+        return reviewed
+
     if stage:
         reviewed, _ = stage.json(
-            'article_evidence', {'stories': selected, 'fetch_version': 'v2'},
-            lambda: story_quality.collect_evidence(selected),
+            'article_evidence', {'stories': selected, 'fetch_version': 'v3'},
+            collect_reportable_evidence,
             lambda value: isinstance(value, list) and all(
                 isinstance(x, dict) and x.get('evidence_status') in
-                ('body', 'summary_only') for x in value))
+                ('body', 'summary_only') for x in value) and any(
+                    x.get('evidence_status') == 'body' and x.get('evidence_excerpts')
+                    for x in value))
     else:
         reviewed = story_quality.collect_evidence(selected)
     featured = story_quality.group_stories(reviewed)
@@ -253,6 +261,8 @@ def write_script(items, stage=None):
 
     topics = editorial.plan_chapters(featured)
     labels = [chapter[0] for chapter in topics]
+    # Only stories actually reported belong in public featured-source metadata.
+    featured = [source for _, _, sources in topics for source in sources]
 
     key = os.getenv('GEMINI_API_KEY')
     if not key:
@@ -274,7 +284,8 @@ def write_script(items, stage=None):
                 part = editorial.brief_draft(TODAY, sources, focus,
                                             has_report=any(c[1] == 'report' for c in topics))
                 validate_segments(part['segments'])
-                editorial.validate_editorial(part, sources, all_segments, number, role, TODAY)
+                editorial.validate_editorial(part, sources, all_segments, number, role, TODAY,
+                                            final_chapter=number == len(topics))
                 return {**part, 'usage': part_usage}
             feedback = ''
             for attempt in range(3):
@@ -297,9 +308,11 @@ def write_script(items, stage=None):
                         raise ValueError(f'Gemini finish reason: {finish}')
                     parsed = json.loads(raw)
                     segments = validate_segments(parsed['segments'])
-                    editorial.validate_editorial(parsed, sources, all_segments, number, role, TODAY)
+                    editorial.validate_editorial(parsed, sources, all_segments, number, role, TODAY,
+                                                final_chapter=number == len(topics))
                     return {'segments': segments, 'episode_title': parsed.get('episode_title', ''),
                             'claims': parsed['claims'], 'practice': parsed.get('practice'),
+                            'story_points': parsed.get('story_points'),
                             'usage': part_usage}
                 except (ValueError, TypeError, KeyError) as error:
                     feedback = f'\nPrevious draft rejected: {error}. Correct this and return complete JSON.'
@@ -312,7 +325,8 @@ def write_script(items, stage=None):
         def valid_part(part):
             try:
                 validate_segments(part['segments'])
-                editorial.validate_editorial(part, sources, all_segments, number, role, TODAY)
+                editorial.validate_editorial(part, sources, all_segments, number, role, TODAY,
+                                            final_chapter=number == len(topics))
                 return isinstance(part.get('usage'), dict)
             except (TypeError, KeyError, ValueError):
                 return False
@@ -463,7 +477,7 @@ def main():
     stage = stage_resume.StageCache(ROOT / '.radio-cache', TODAY)
     items, _ = stage.json('feed_snapshot', {'day': TODAY, 'feeds': FEEDS,
                                            'collection_version': 'v1'}, news,
-                          lambda v: isinstance(v, list))
+                          lambda v: isinstance(v, list) and bool(v))
     segments, usage, focus, title, featured, starts, labels = write_script(items, stage)
     with tempfile.TemporaryDirectory() as directory:
         audio, duration, measured_segments = asyncio.run(
@@ -471,11 +485,11 @@ def main():
         chapters = stage_resume.chapters_for_parts(
             starts, measured_segments, duration, labels=labels)
         sanitized = story_quality.public_sources(featured)
-        metadata = {'date': TODAY, 'title': title or focus,
-                    'episode_title': title or focus, 'duration_seconds': duration,
+        metadata = {'date': TODAY, 'title': title or '今日のAIニュース',
+                    'episode_title': title or '今日のAIニュース', 'duration_seconds': duration,
                     'audio': f'episodes/{TODAY}.mp3', 'sources': sanitized,
                     'featured_sources': sanitized, 'script': segments,
-                    'chapters': chapters, 'topics': [focus], 'host': 'NANA',
+                    'chapters': chapters, 'topics': [s['title'] for s in sanitized], 'host': 'NANA',
                     'gemini_usage': usage}
         # Never replace a published MP3 until the new pair passes validation.
         try:

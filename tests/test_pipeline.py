@@ -1,4 +1,4 @@
-from editorial_fixtures import draft, response
+from editorial_fixtures import draft, response, report_draft, SOURCE
 """Offline reliability tests: no Gemini key, Edge TTS, or network needed."""
 import json
 import tempfile
@@ -134,22 +134,23 @@ class SoloHostTests(unittest.TestCase):
             prompts.append(prompt)
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
-            payload = draft(practice='This chapter role: practice' in prompt)
+            payload = report_draft()
             if len(prompts) == 1:
                 payload['episode_title'] = '一人で楽しく語るAIニュース'
             return response(payload)
         with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
+             patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
         self.assertEqual(len(prompts), 2)
-        self.assertIn('This chapter role: practice', prompts[0])
+        self.assertIn('This chapter role: report', prompts[0])
         self.assertIn('Exactly ONE Japanese female host NANA', prompts[0])
         self.assertTrue(prompts[1].startswith('EDITORIAL AUDIT'))
         self.assertTrue(all(x['speaker'] == 'NANA' for x in segments))
-        self.assertEqual(len(segments), 12)
+        self.assertEqual(len(segments), 4)
         self.assertEqual(len(starts), len(labels))
-        self.assertEqual(title, focus.split('：', 1)[-1] + 'と今日の見出し')
+        self.assertEqual(title, '一人で楽しく語るAIニュース')
         self.assertEqual(usage['api_calls'], 2)
 
 
@@ -208,7 +209,7 @@ class GeminiOutputBudgetTests(unittest.TestCase):
         def fake_gemini(prompt, key, model, **kwargs):
             budgets.append(kwargs['thinking_budget'])
             if not prompt.startswith('EDITORIAL AUDIT'):
-                self.assertIn('This chapter role: practice', prompt)
+                self.assertIn('This chapter role: report', prompt)
             if len(budgets) == 1:
                 return {'usageMetadata': {}, 'candidates': [{
                     'finishReason': 'MAX_TOKENS',
@@ -216,15 +217,16 @@ class GeminiOutputBudgetTests(unittest.TestCase):
                 }]}
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
-            return response(draft(practice='This chapter role: practice' in prompt))
+            return response(report_draft())
         with patch.dict(generate.os.environ, {'GEMINI_API_KEY': 'test-key'}), \
              patch.object(generate, 'episode_history', return_value=[]), \
+             patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE]), \
              patch.object(generate, 'request_gemini', side_effect=fake_gemini), \
              patch.object(generate.time, 'sleep'):
             segments, usage, focus, title, featured, starts, labels = generate.write_script([])
         self.assertEqual(budgets, [512, 0, 512])
-        self.assertEqual(len(segments), 12)
-        self.assertEqual(len(starts), 2)
+        self.assertEqual(len(segments), 4)
+        self.assertEqual(len(starts), 1)
         self.assertEqual(usage['api_calls'], 3)
 
 if __name__ == '__main__':
