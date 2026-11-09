@@ -2,9 +2,9 @@ import asyncio, calendar, concurrent.futures, datetime as dt, json, os, re, subp
 from pathlib import Path
 import requests, feedparser, edge_tts
 try:
-    from scripts import story_quality, stage_resume, editorial
+    from scripts import story_quality, stage_resume, editorial, rebuild_request
 except ModuleNotFoundError:
-    import story_quality, stage_resume, editorial
+    import story_quality, stage_resume, editorial, rebuild_request
 # MASURADIO-EVIDENCE-RESUME-V1
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -491,6 +491,9 @@ def main():
                     'featured_sources': sanitized, 'script': segments,
                     'chapters': chapters, 'topics': [s['title'] for s in sanitized], 'host': 'NANA',
                     'gemini_usage': usage}
+        requested = rebuild_request.request_id(TODAY)
+        if requested:
+            metadata['rebuild_request_id'] = requested
         # Never replace a published MP3 until the new pair passes validation.
         try:
             from scripts import verify

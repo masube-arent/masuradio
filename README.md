@@ -56,3 +56,10 @@ Information-value revision (2026-11-09):
 - Evidence and editorial cache versions change, so previously incomplete extraction and low-value drafts are not reused. An empty feed snapshot or zero-body fetch result is not cached, so a later scheduled retry can recover after a temporary outage. Successful partial-body stages still resume normally; unavailable sources in that cached partial result are not automatically refreshed. Featured sources and topics reflect the stories actually reported.
 - The optional workflow-dispatch `replace_existing` input defaults to false. Ordinary merges, scheduled runs and manual runs still skip a valid episode. An explicitly requested replacement reuses valid cached stages when unchanged, may incur Gemini usage, creates a complete audio/JSON pair before replacing anything, and is published only after validation. Do not enable it without authorization to replace today's public episode and incur the API usage.
 - Offline validation does not call Gemini or TTS. The new writer/audit behavior still requires a real generation to assess editorial quality; passing tests alone is not proof that generated prose is accurate or useful.
+
+
+Authorized one-time rebuilds:
+- A reviewed `.github/rebuild-request.json` can request a rebuild for one JST date without browser login. The file contains only `date` and a unique `request_id`.
+- A matching request is pending until a successfully validated/published episode records that ID. Queued runs refresh main under the existing concurrency group, then skip the consumed request. Failures preserve the old episode and may resume cached stages on retry.
+- Requests for a past or future date do not replace today's valid episode. The November 9 quality replacement expires after November 9 and does not change ordinary daily behavior.
+- Creating a new request still requires authorization to replace that public episode and incur Gemini usage. No credentials or expanded GitHub permissions are added.
