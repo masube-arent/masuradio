@@ -228,7 +228,11 @@ def validate_segments(segments):
     return segments
 
 def write_script(items, stage=None):
-    """Write distinct verified chapters and checkpoint each successful Gemini part."""
+    """Resume validated chapters, then audit the complete script before speech.
+
+    Keep unaffected chapter prompts stable when fixing a later chapter so a
+    recovery run does not repeat their successful paid generation calls.
+    """
     history = episode_history()
     focus, show_direction, focus_keyword = SHOWS[dt.datetime.now(JST).weekday()]
     selected = select_sources(story_quality.group_stories(items), focus_keyword, history)

@@ -40,4 +40,9 @@ Headline-only recovery (2026-11-09):
 - Body reporting and practice still use Gemini, exact evidence validation, and the full semantic audit before speech. The fixed opening is included in that audit too; an audit rejection still prevents audio/publication.
 - Script cache keys include the editorial version so older generated openings are not reused after this fix. Feed and article-evidence caches can still resume normally.
 
+Practice continuation recovery (2026-11-09):
+- Later chapters still reject repeated audience greetings and host introductions. A greeting inside paired quotes is allowed only with nearby, unquoted sample/input framing; a final practice farewell may name the station.
+- Rejections identify the chapter, zero-based segment index and a fixed marker category, without logging arbitrary draft/article text. The same bounded retry receives that diagnostic.
+- Only the practice prompt changes, so already validated opening/report chapters can resume from cache. The full semantic audit still runs before any new audio/publication.
+
 Rollout: review the draft PR and passing validation before merging. A main-branch change to `scripts/generate.py` automatically starts Daily MASURADIO recovery and Pages workflows; recovery skips a currently valid episode. Do not merge or dispatch generation just to run these offline tests. Existing published audio/JSON are not rewritten by this change.

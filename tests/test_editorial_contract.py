@@ -144,6 +144,125 @@ class EditorialContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Repeated'):
             editorial.validate_editorial(part, [], [part['segments'][1]], 2, 'practice')
 
+    def test_quoted_greeting_samples_are_not_a_second_opening(self):
+        for text in ('対象にする音声サンプルは、「こんにちは」という一言です。',
+                     '「おはようございます」を入力して試します。',
+                     '読み上げる例文は「『こんばんは』という短い挨拶」です。',
+                     '入力例は"こんにちは"です。'):
+            part = draft(True)
+            part['segments'].insert(1, {'speaker': 'NANA', 'text': text})
+            with self.subTest(text=text):
+                editorial.validate_editorial(part, [], [], 3, 'practice')
+
+    def test_final_practice_station_signoff_is_allowed(self):
+        part = draft(True)
+        part['segments'][-1]['text'] = 'それではまた次回。MASURADIO 88.8、NANAがお届けしました。'
+        editorial.validate_editorial(part, [], [], 3, 'practice')
+        with self.assertRaisesRegex(ValueError, 'marker=station-announcement'):
+            editorial.validate_editorial(part, [], [], 2, 'report')
+
+    def test_real_reintroductions_and_unframed_quotes_still_fail(self):
+        cases = [
+            ('こんにちは、改めて番組を始めましょう。', 'audience-greeting'),
+            ('「こんにちは」。今日は音声テストを紹介します。NANAです。', 'audience-greeting'),
+            ('入力例は「こんにちは」です。こんばんは、続きをお届けします。', 'audience-greeting'),
+            ('入力例は「こんにちは」です。NANAです。', 'host-introduction'),
+            ('入力例は「NANAです」です。', 'host-introduction'),
+            ('サンプルは「こんにちはという一言です。', 'audience-greeting'),
+            ('サンプルは「『こんにちは」です。』', 'audience-greeting'),
+            ('「こんにちは」、皆さんにお知らせです。', 'audience-greeting'),
+            ('「こんにちは」「サンプル」です。', 'audience-greeting'),
+            ('NANAです。実践に進みましょう。', 'host-introduction'),
+            ('MASURADIO 88.8をお届けしました。また次回。', 'station-announcement'),
+        ]
+        for text, marker in cases:
+            part = draft(True)
+            part['segments'].insert(1, {'speaker': 'NANA', 'text': text})
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, f'marker={marker}'):
+                editorial.validate_editorial(part, [], [], 3, 'practice')
+
+    def test_signoff_exception_does_not_hide_greetings_or_host_intro(self):
+        for text in ('こんにちは。MASURADIO 88.8、また次回お会いしましょう。',
+                     'MASURADIO 88.8、NANAです。また次回お会いしましょう。',
+                     'MASURADIO 88.8、次回のテーマを考えてみてください。',
+                     'MASURADIO 88.8、入力例は「また次回お会いしましょう」です。'):
+            part = draft(True)
+            part['segments'][-1]['text'] = text
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, 'Repeated opening'):
+                editorial.validate_editorial(part, [], [], 3, 'practice')
+
+    def test_reintroduction_diagnostics_do_not_expose_draft_content(self):
+        part = draft(True)
+        part['segments'].insert(2, {'speaker': 'NANA', 'text': 'こんにちは、RAW_DRAFT_PRIVATE_SENTINELです。'})
+        with self.assertRaises(ValueError) as raised:
+            editorial.validate_editorial(part, [], [], 3, 'practice')
+        message = str(raised.exception)
+        self.assertIn('chapter=3, segment_index=2, marker=audience-greeting', message)
+        self.assertNotIn('RAW_DRAFT_PRIVATE_SENTINEL', message)
+        self.assertNotIn('こんにちは', message)
+
+    def test_first_chapter_opening_is_still_allowed(self):
+        part = draft()
+        part['segments'][0]['text'] = 'こんにちは、MASURADIO 88.8、NANAです。'
+        editorial.validate_editorial(part, [], [], 1, 'brief')
+
+    def test_practice_prompt_change_reuses_completed_earlier_chapters(self):
+        headline = dict(SOURCE, title='Database privacy controls', url='https://example.org/privacy',
+                        evidence_status='summary_only', evidence_excerpts=[])
+        calls, failed = [], False
+        def fake(prompt, *args, **kwargs):
+            nonlocal failed
+            if prompt.startswith('EDITORIAL AUDIT'):
+                calls.append('audit')
+                return response({'approved': True, 'issues': []})
+            if 'This chapter role: practice' in prompt:
+                if not failed:
+                    self.assertNotIn('Practice continuation:', prompt)
+                    failed = True
+                    calls.append('old-practice-failed')
+                    raise RuntimeError('Previous practice failed')
+                self.assertIn('Practice continuation:', prompt)
+                calls.append('new-practice')
+                return response(draft(True))
+            self.assertNotIn('Practice continuation:', prompt)
+            calls.append('report')
+            part = draft()
+            part['segments'][0]['text'] = 'ここからは記事本文を確認できた話題です。'
+            part['segments'][2]['text'] = 'Phononの開発元はGradiumと記事で説明されています。'
+            part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
+                               'quote': SOURCE['evidence_excerpts'][0]['text']}]
+            return response(part)
+        current_prompt = editorial.chapter_prompt
+        def previous_prompt(*args, **kwargs):
+            return current_prompt(*args, **kwargs).split('\nPractice continuation:')[0]
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE, headline]), \
+             patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
+            stage = StageCache(folder, '2026-11-09')
+            with patch.object(editorial, 'chapter_prompt', side_effect=previous_prompt):
+                with self.assertRaisesRegex(RuntimeError, 'Previous practice failed'):
+                    self.run_script(fake, stage)
+            self.run_script(fake, stage)
+        self.assertEqual(brief.call_count, 1)
+        self.assertEqual(calls, ['report', 'old-practice-failed', 'new-practice', 'audit'])
+
+    def test_reintroduction_retry_receives_safe_actionable_diagnostics(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                return response({'approved': True, 'issues': []})
+            part = draft(True)
+            if len(calls) == 1:
+                part['segments'][-1]['text'] = 'NANAです。また次回お会いしましょう。'
+            else:
+                self.assertIn('segment_index=5, marker=host-introduction', prompt)
+                self.assertIn('reserve station ID for the final practice farewell', prompt)
+                part['segments'][-1]['text'] = 'MASURADIO 88.8、NANAがお届けしました。また次回。'
+            return response(part)
+        self.run_script(fake)
+        self.assertEqual(len(calls), 3)
+
     def test_exact_quote_and_segment_binding_required(self):
         part = draft()
         part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1', 'quote': 'invented unsupported attribution'}]
