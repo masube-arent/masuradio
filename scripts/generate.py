@@ -291,7 +291,7 @@ def write_script(items, stage=None):
             for attempt in range(3):
                 budget, limit = (512, 8192) if attempt == 0 else (0, 12288)
                 result = request_gemini(prompt + feedback, key, model, thinking_budget=budget,
-                                        max_output_tokens=limit)
+                                        max_output_tokens=limit, temperature=0.3)
                 met = result.get('usageMetadata', {})
                 part_usage['api_calls'] += 1
                 for field, src in (('prompt_tokens', 'promptTokenCount'),
@@ -308,6 +308,7 @@ def write_script(items, stage=None):
                         raise ValueError(f'Gemini finish reason: {finish}')
                     parsed = json.loads(raw)
                     segments = validate_segments(parsed['segments'])
+                    parsed = editorial.bind_claims(parsed, sources)
                     editorial.validate_editorial(parsed, sources, all_segments, number, role, TODAY,
                                                 final_chapter=number == len(topics))
                     return {'segments': segments, 'episode_title': parsed.get('episode_title', ''),
@@ -334,7 +335,7 @@ def write_script(items, stage=None):
         if stage:
             part, reused = stage.json(
                 f'script_part_{number}',
-                {'prompt': prompt, 'model': model, 'temperature': 0.7,
+                {'prompt': prompt, 'model': model, 'temperature': 0.3,
                  'editorial_version': editorial.VERSION,
                  'thinking_budget': (512, 0), 'output_tokens': (8192, 12288)},
                 produce_part, valid_part)

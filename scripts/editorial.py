@@ -53,6 +53,88 @@ def source_evidence(sources):
     return result
 
 
+def _citation_catalog(sources):
+    """Give the writer short local references without changing audit evidence."""
+    evidence, aliases = [], {}
+    for source_index, source in enumerate(source_evidence(sources), 1):
+        writer_excerpts = []
+        for excerpt_index, excerpt in enumerate(source['excerpts'], 1):
+            if (not isinstance(excerpt, dict)
+                    or not isinstance(excerpt.get('id'), str) or not excerpt['id']
+                    or not isinstance(excerpt.get('text'), str) or len(excerpt['text']) < 15
+                    or not isinstance(source['url'], str) or not source['url'].strip()):
+                raise ValueError('Invalid citation evidence: '
+                                 f'source_index={source_index}, excerpt_index={excerpt_index}')
+            alias = f'S{source_index}E{excerpt_index}'
+            aliases[alias] = {'excerpt_id': excerpt['id'], 'quote': excerpt['text'],
+                              'source_url': source['url']}
+            # Keep the complete text, headings, qualifications and other context.
+            # Aliases depend only on the ordered sources/excerpts in this chapter.
+            writer_excerpts.append(dict(excerpt, id=alias))
+        evidence.append(dict(source, excerpts=writer_excerpts))
+    return evidence, aliases
+
+
+def writer_evidence(sources):
+    return _citation_catalog(sources)[0]
+
+
+def bind_claims(parsed, sources):
+    """Return a new draft with trusted full excerpts bound to writer references.
+
+    This resolves references, not truth: exact/numeric checks, per-source coverage
+    and the full semantic audit remain mandatory. Legacy explicit quotes must be
+    exact and unambiguous; a bad supplied quote is never silently repaired.
+    """
+    if not isinstance(parsed, dict) or not isinstance(parsed.get('segments'), list):
+        raise ValueError('Invalid citation draft: marker=missing-segments')
+    claims = parsed.get('claims')
+    if not isinstance(claims, list):
+        raise ValueError('Missing claim evidence ledger')
+    _, aliases = _citation_catalog(sources)
+    bound = []
+    for claim_index, claim in enumerate(claims):
+        def reject(marker):
+            # Only trusted position integers and fixed labels enter retry/log text.
+            raise ValueError('Claim has no exact excerpt support: '
+                             f'claim_index={claim_index}, marker={marker}. '
+                             'Use a supplied excerpt alias for a valid segment index; '
+                             'do not copy or invent quotes')
+
+        if not isinstance(claim, dict):
+            reject('invalid-claim')
+        index = claim.get('segment_index')
+        if type(index) is not int or not 0 <= index < len(parsed['segments']):
+            reject('invalid-segment-index')
+        reference = claim.get('excerpt_id')
+        if not isinstance(reference, str) or not reference:
+            reject('invalid-excerpt-id')
+        if 'quote' in claim and (not isinstance(claim['quote'], str) or len(claim['quote']) < 15):
+            reject('invalid-provided-quote')
+        if reference in aliases:
+            record = aliases[reference]
+            if 'quote' in claim and claim['quote'] not in record['quote']:
+                reject('provided-quote-mismatch')
+            if 'source_url' in claim and claim['source_url'] != record['source_url']:
+                reject('foreign-source')
+        else:
+            # Only explicit exact quotes can use original stable IDs. Never infer
+            # a reference from a URL, similar ID, partial ID or a likely source.
+            if 'quote' not in claim:
+                reject('unknown-excerpt-id')
+            matches = [record for record in aliases.values()
+                       if reference == record['excerpt_id'] and claim['quote'] in record['quote']
+                       and ('source_url' not in claim or claim['source_url'] == record['source_url'])]
+            if not matches:
+                reject('provided-quote-mismatch')
+            if len(matches) != 1:
+                reject('ambiguous-excerpt-id')
+            record = matches[0]
+        # Record the source as well: two articles may share both an ID and text.
+        bound.append(dict(claim, **record))
+    return dict(parsed, claims=bound)
+
+
 def plan_chapters(featured):
     """Report verified stories once; no headline filler or compulsory practice."""
     verified, seen = [], set()
@@ -116,7 +198,7 @@ def brief_draft(day, sources, focus, has_report=False):
 
 def chapter_prompt(day, number, chapters, focus, direction, history, previous):
     label, role, sources = chapters[number - 1]
-    evidence = source_evidence(sources)
+    evidence = writer_evidence(sources)
     prompt = f'''MASURADIO 88.8, {day}, part {number} of {len(chapters)}: {label}.
 Exactly ONE Japanese female host NANA. Natural Japanese radio monologue, short spoken
 sentences and occasional one-person humor. No cohosts. Write 2-9 segments, each 5-500
@@ -128,6 +210,8 @@ an unrelated weekday topic or invent connections to it. Prioritize evidence over
 This chapter role: {role}. Full chapter plan: {json.dumps([(x[0], x[1]) for x in chapters], ensure_ascii=False)}
 Only part 1 may greet listeners, introduce NANA or the date. Keep its opening to one short
 sentence, then lead with the news, not an agenda, disclaimer or English headline list.
+Do not announce unsourced agenda/list counts or number the stories aloud. Spoken numbers
+must describe facts supported by the cited excerpts, not the structure of this script.
 Only the last part may sign off, briefly, without retelling any story or advice. The
 station may be named in the opening or the final segment's clear farewell, nowhere else.
 Continue naturally from the previous chapter. No repeated audience greeting or NANAです.
@@ -149,13 +233,18 @@ productivity pep talk, or recap that repeats the same news.
 Output JSON object with segments: [{{"speaker":"NANA","text":"..."}}], claims: [],
 and, in part 1 only, episode_title (12-32 Japanese characters).
 For EVERY excerpt-based factual statement include a claims entry:
-{{"segment_index":0,"excerpt_id":"exact supplied id","quote":"exact supporting excerpt substring"}}.
-Include enough of the quote to preserve comparison conditions and attribution.
+{{"segment_index":0,"excerpt_id":"S1E1"}}.
+Use ONLY the exact short excerpt id supplied in THIS part, such as S1E1 or S2E1.
+Do NOT output a quote or copy evidence into the claims ledger. The program will attach
+the original stable excerpt ID, source URL and COMPLETE exact excerpt automatically.
+Cite all excerpts needed to support each segment. The complete cited text must actually
+support the spoken claim, including its attribution, scope and comparison conditions;
+a valid reference alone is not proof. Do not omit qualifications from the speech.
 For report also output story_points, EXACTLY one entry per assigned source:
 [{{"source_url":"exact assigned source URL","segment_indices":[0,1]}}].
 Each segment_indices list must contain at least TWO distinct zero-based indices of spoken
 segments conveying DIFFERENT useful facts for THAT story, not framing or generic praise.
-Each listed segment must have a claims entry whose exact quote and excerpt ID belong to
+Each listed segment must have a claims entry whose supplied excerpt alias belongs to
 THAT source URL. This ledger is not proof of truth: the full semantic audit checks that
 the speech actually conveys those distinct facts and preserves their qualifications.
 Past headlines to avoid recycling: {json.dumps(history, ensure_ascii=False)[:1800]}
@@ -297,6 +386,7 @@ def _validate_story_points(parsed, sources, claims, texts):
             raise ValueError('story_points needs at least two distinct fact segments per source')
         for index in indices:
             if not any(c['segment_index'] == index
+                       and ('source_url' not in c or c['source_url'] == url)
                        and any(c['excerpt_id'] == e['id'] and c['quote'] in e['text']
                                for e in assigned[url]) for c in claims):
                 raise ValueError('story_points segment needs exact claim support from its own source')
@@ -318,7 +408,7 @@ def validate_editorial(parsed, sources, previous, number, role, broadcast_date=N
             if sentence in sentences or any(sentence in p for p in old):
                 raise ValueError('Repeated substantive sentence')
             sentences.add(sentence)
-    excerpts = [e for s in source_evidence(sources) for e in s['excerpts']]
+    excerpts = [(s['url'], e) for s in source_evidence(sources) for e in s['excerpts']]
     claims = parsed.get('claims')
     if not isinstance(claims, list):
         raise ValueError('Missing claim evidence ledger')
@@ -334,7 +424,8 @@ def validate_editorial(parsed, sources, previous, number, role, broadcast_date=N
         if (type(index) is not int or not 0 <= index < len(texts)
                 or not isinstance(quote, str) or len(quote) < 15
                 or not any(claim.get('excerpt_id') == e['id'] and quote in e['text']
-                           for e in excerpts)):
+                           and ('source_url' not in claim or claim['source_url'] == url)
+                           for url, e in excerpts)):
             raise ValueError('Claim has no exact excerpt support')
     if role == 'report':
         for index, text in enumerate(texts):
@@ -355,7 +446,10 @@ def validate_editorial(parsed, sources, previous, number, role, broadcast_date=N
             quotes = ' '.join(c['quote'] for c in claims if c['segment_index'] == index)
             supported = set(re.findall(r'\d+(?:[.,]\d+)*', unicodedata.normalize('NFKC', quotes)))
             if any(n not in supported for n in numbers):
-                raise ValueError('Spoken number missing from cited evidence')
+                raise ValueError('Spoken number missing from cited evidence: '
+                                 f'chapter={number}, segment_index={index}, marker=uncited-number. '
+                                 'Cite the supporting excerpt or omit the number; '
+                                 'avoid unsourced agenda/list counts')
         _validate_story_points(parsed, sources, claims, texts)
     if role == 'practice':
         practice = parsed.get('practice', {})
