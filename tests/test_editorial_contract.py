@@ -1,8 +1,10 @@
+import json
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 from scripts import editorial, generate
-from scripts.stage_resume import StageCache
+from scripts.stage_resume import StageCache, digest
 from editorial_fixtures import draft, response
 
 
@@ -34,6 +36,106 @@ class EditorialContractTests(unittest.TestCase):
         self.assertNotIn('report', [c[1] for c in chapters])
         self.assertEqual(chapters[-1][2], [])
         self.assertEqual(editorial.source_evidence(chapters[0][2])[0]['excerpts'], [])
+
+    def test_brief_template_handles_zero_one_and_many_headlines(self):
+        for count in (0, 1, 3, 7):
+            sources = [{'title': f'未確認の記事見出し {i}'} for i in range(count)]
+            part = editorial.brief_draft('2026-11-09', sources, '月曜：AIの研究', has_report=False)
+            with self.subTest(count=count):
+                generate.validate_segments(part['segments'])
+                editorial.validate_editorial(part, sources, [], 1, 'brief')
+                self.assertEqual(part['claims'], [])
+                self.assertEqual(len(part['segments']), 5 + max(1, min(count, 3)))
+                spoken = '\n'.join(s['text'] for s in part['segments'])
+                self.assertIn('記事本文を確認できていない見出し', spoken)
+                self.assertNotIn('記事本文で根拠を確認できた話題', spoken)
+                self.assertIn('出典を自分で確かめる練習', spoken)
+
+    def test_brief_skips_unusable_titles_without_slicing_or_repeating_them(self):
+        for title in (None, '', 'x' * 161, 'https://example.org/news', '<b>ニュース</b>'):
+            with self.subTest(title=title):
+                part = editorial.brief_draft('2026-11-09', [{'title': title}], 'AIの研究')
+                self.assertIn('読み上げられる見出しを確認できませんでした', part['segments'][3]['text'])
+                generate.validate_segments(part['segments'])
+        part = editorial.brief_draft('2026-11-09',
+                                    [{'title': 'ＡＩ News'}, {'title': 'AI  News'}], 'AIの研究')
+        self.assertEqual(len(part['segments']), 6)
+
+    def test_brief_rejects_all_excerpt_claims_even_when_an_excerpt_exists(self):
+        part = editorial.brief_draft('2026-11-09', [SOURCE], 'AIの研究')
+        part['claims'] = [{'segment_index': 3, 'excerpt_id': 'phonon-1',
+                           'quote': SOURCE['evidence_excerpts'][0]['text']}]
+        with self.assertRaisesRegex(ValueError, 'Headline-only brief.*claims must be'):
+            editorial.validate_editorial(part, [SOURCE], [], 1, 'brief')
+
+    def test_brief_skips_headlines_that_repeat_a_substantive_sentence(self):
+        common = 'AIエージェントを業務に導入するときに知っておきたいこと。'
+        sources = [{'title': common + '設計編'}, {'title': common + '運用編'}]
+        part = editorial.brief_draft('2026-11-09', sources, 'AIの研究')
+        generate.validate_segments(part['segments'])
+        editorial.validate_editorial(part, sources, [], 1, 'brief')
+        spoken = '\n'.join(s['text'] for s in part['segments'])
+        self.assertIn(common + '設計編', spoken)
+        self.assertNotIn(common + '運用編', spoken)
+        repeated = editorial.brief_draft('2026-11-09',
+                                          [{'title': '導入。' + common + common + 'まとめ'}],
+                                          'AIの研究')
+        editorial.validate_editorial(repeated, [], [], 1, 'brief')
+        self.assertIn('読み上げられる見出しを確認できませんでした', repeated['segments'][3]['text'])
+
+    def test_mixed_evidence_uses_fixed_brief_and_audits_all_chapters(self):
+        headlines = [dict(SOURCE, evidence_status='summary_only', evidence_excerpts=[],
+                          title=title, url=f'https://example.org/headline/{i}')
+                     for i, title in enumerate([
+                         'Audio codec research', 'Medical imaging assistant', 'Education lesson planner',
+                         'Robotics walking demo', 'Database privacy controls',
+                         'Weather prediction update', 'Compiler optimization release'])]
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            self.assertNotIn('This chapter role: brief', prompt)
+            if prompt.startswith('EDITORIAL AUDIT'):
+                calls.append('audit')
+                chapters = json.loads(prompt.split('\n')[-1])
+                self.assertEqual([c['role'] for c in chapters], ['brief', 'report', 'practice'])
+                self.assertEqual(chapters[0]['draft']['claims'], [])
+                self.assertTrue(all(v == 0 for v in chapters[0]['draft']['usage'].values()))
+                self.assertIn('未確認の見出しとして', chapters[0]['draft']['segments'][3]['text'])
+                self.assertEqual(chapters[0]['evidence'][0]['excerpts'], [])
+                return response({'approved': True, 'issues': []})
+            self.assertIn('phonon-1', prompt)
+            if 'This chapter role: practice' in prompt:
+                calls.append('practice')
+                return response(draft(True))
+            calls.append('report')
+            part = draft()
+            part['segments'][0]['text'] = 'ここからは記事本文を確認できた話題です。'
+            part['segments'][1]['text'] = '掲載日は11月6日です。'
+            part['segments'][2]['text'] = 'Phononの開発元はGradiumと記事で説明されています。'
+            part['claims'] = [{'segment_index': 2, 'excerpt_id': 'phonon-1',
+                               'quote': SOURCE['evidence_excerpts'][0]['text']}]
+            return response(part)
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(generate.story_quality, 'collect_evidence', return_value=[SOURCE] + headlines):
+            stage = StageCache(folder, '2026-11-09')
+            first = self.run_script(fake, stage)
+            second = self.run_script(fake, stage)
+        self.assertEqual(calls, ['report', 'practice', 'audit'])
+        self.assertEqual(first, second)
+        self.assertEqual(len(first[4]), 8)
+        self.assertEqual(first[-1], ['ニュース', '根拠と深掘り', '実践・まとめ'])
+        self.assertEqual(first[1]['api_calls'], 3)
+
+    def test_headline_only_does_not_call_writer_for_brief(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            self.assertNotIn('This chapter role: brief', prompt)
+            calls.append('audit' if prompt.startswith('EDITORIAL AUDIT') else 'practice')
+            return response({'approved': True, 'issues': []}) if calls[-1] == 'audit' else response(draft(True))
+        with patch.object(generate.story_quality, 'collect_evidence',
+                          return_value=[dict(SOURCE, evidence_status='summary_only')]):
+            result = self.run_script(fake)
+        self.assertEqual(calls, ['practice', 'audit'])
+        self.assertEqual(result[-1], ['ニュース', '実践・まとめ'])
 
     def test_rejects_repeated_opening_and_sentence(self):
         with self.assertRaisesRegex(ValueError, 'opening'):
@@ -128,9 +230,44 @@ class EditorialContractTests(unittest.TestCase):
             stage = StageCache(folder, '2026-11-08')
             first = self.run_script(fake, stage)
             second = self.run_script(fake, stage)
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 2)
         self.assertEqual(first, second)
         self.assertNotIn('claims', first[0][0])
+
+    def test_editorial_version_invalidates_cached_scripts(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(draft(True))
+        with tempfile.TemporaryDirectory() as folder, \
+             patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
+            stage = StageCache(folder, '2026-11-09')
+            self.run_script(fake, stage)
+            with patch.object(editorial, 'VERSION', editorial.VERSION + '-next'):
+                self.run_script(fake, stage)
+        self.assertEqual(brief.call_count, 2)
+        self.assertEqual(len(calls), 4, 'Practice and audit must be rerun for a new editorial version')
+
+    def test_cached_brief_is_validated_before_reuse(self):
+        calls = []
+        def fake(prompt, *args, **kwargs):
+            calls.append(prompt)
+            return response({'approved': True, 'issues': []}) if prompt.startswith('EDITORIAL AUDIT') else response(draft(True))
+        with tempfile.TemporaryDirectory() as folder:
+            stage = StageCache(folder, '2026-11-09')
+            first = self.run_script(fake, stage)
+            path = next(Path(folder).rglob('script_part_1-*.json'))
+            record = json.loads(path.read_text())
+            record['value']['claims'] = [{'segment_index': 0, 'excerpt_id': 'invented',
+                                         'quote': 'This is not body evidence.'}]
+            record['checksum'] = digest(record['value'])
+            path.write_text(json.dumps(record))
+            with patch.object(editorial, 'brief_draft', wraps=editorial.brief_draft) as brief:
+                second = self.run_script(fake, stage)
+            self.assertEqual(brief.call_count, 1)
+            self.assertEqual(json.loads(path.read_text())['value']['claims'], [])
+        self.assertEqual(first, second)
+        self.assertEqual(len(calls), 2, 'Rebuilding the same brief must not repeat paid calls')
 
     def test_rejected_audit_is_cached_without_repeated_paid_calls(self):
         calls = []
@@ -142,7 +279,7 @@ class EditorialContractTests(unittest.TestCase):
             for _ in range(2):
                 with self.assertRaisesRegex(RuntimeError, 'Editorial audit rejected'):
                     self.run_script(fake, stage)
-        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(calls), 2)
 
     def test_invalid_practice_retries_with_actionable_feedback(self):
         calls = []
@@ -151,10 +288,10 @@ class EditorialContractTests(unittest.TestCase):
             if prompt.startswith('EDITORIAL AUDIT'):
                 return response({'approved': True, 'issues': []})
             part = draft('This chapter role: practice' in prompt)
-            if len(calls) == 2:
+            if len(calls) == 1:
                 del part['practice']
-            if len(calls) == 3:
+            if len(calls) == 2:
                 self.assertIn('Previous draft rejected: Practice', prompt)
             return response(part)
         self.run_script(fake)
-        self.assertEqual(len(calls), 4)
+        self.assertEqual(len(calls), 3)

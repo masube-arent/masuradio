@@ -35,4 +35,9 @@ Editorial grounding (2026-11-08 proposal):
 - Rejection, incomplete or malformed audit output stops generation before audio/publication. Valid audit decisions, including rejections, are cached so unchanged rejected drafts do not spend another audit call on scheduled retries. Correct the draft inputs or editorial code before retrying; this does not automatically repair rejected drafts.
 - Expanded evidence/context increases input tokens; the audit adds one normal API call per new draft (existing transport retries still apply). Usage estimates include the audit, using the existing illustrative Flash rates; they are not a billing cap. No paid generation is required for the offline regression suite.
 
+Headline-only recovery (2026-11-09):
+- The headline-only opening now uses a short, fixed NANA template with explicit unverified framing and an empty claim ledger. It makes no Gemini writing call, never invents excerpt IDs, and skips unusable/oversized titles rather than cutting them into new claims.
+- Body reporting and practice still use Gemini, exact evidence validation, and the full semantic audit before speech. The fixed opening is included in that audit too; an audit rejection still prevents audio/publication.
+- Script cache keys include the editorial version so older generated openings are not reused after this fix. Feed and article-evidence caches can still resume normally.
+
 Rollout: review the draft PR and passing validation before merging. A main-branch change to `scripts/generate.py` automatically starts Daily MASURADIO recovery and Pages workflows; recovery skips a currently valid episode. Do not merge or dispatch generation just to run these offline tests. Existing published audio/JSON are not rewritten by this change.

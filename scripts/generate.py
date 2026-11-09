@@ -266,6 +266,12 @@ def write_script(items, stage=None):
         def produce_part():
             part_usage = {'prompt_tokens': 0, 'output_tokens': 0,
                           'thinking_tokens': 0, 'total_tokens': 0, 'api_calls': 0}
+            if role == 'brief':
+                part = editorial.brief_draft(TODAY, sources, focus,
+                                            has_report=any(c[1] == 'report' for c in topics))
+                validate_segments(part['segments'])
+                editorial.validate_editorial(part, sources, all_segments, number, role, TODAY)
+                return {**part, 'usage': part_usage}
             feedback = ''
             for attempt in range(3):
                 budget, limit = (512, 8192) if attempt == 0 else (0, 12288)
@@ -311,6 +317,7 @@ def write_script(items, stage=None):
             part, reused = stage.json(
                 f'script_part_{number}',
                 {'prompt': prompt, 'model': model, 'temperature': 0.7,
+                 'editorial_version': editorial.VERSION,
                  'thinking_budget': (512, 0), 'output_tokens': (8192, 12288)},
                 produce_part, valid_part)
         else:
