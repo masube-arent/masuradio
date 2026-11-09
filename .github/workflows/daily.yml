@@ -19,6 +19,7 @@ on:
     paths:
       - '.github/workflows/daily.yml'
       - 'scripts/generate.py'
+      - '.github/rebuild-request.json'
 permissions:
   contents: write
 concurrency:
@@ -46,7 +47,10 @@ jobs:
         env:
           REPLACE_EXISTING: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_existing }}
         run: |
-          if [ "$REPLACE_EXISTING" = "true" ]; then
+          # A reviewed request is consumed only by a successfully published pair.
+          # The latest-main refresh and concurrency group prevent duplicate runs.
+          REQUEST_PENDING=$(python scripts/rebuild_request.py)
+          if [ "$REPLACE_EXISTING" = "true" ] || [ "$REQUEST_PENDING" = "true" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Explicit replacement requested; keep published files until new audio passes validation"
           elif python scripts/verify.py --episode; then
