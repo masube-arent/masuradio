@@ -104,7 +104,7 @@ def brief_draft(day, sources, focus, has_report=False):
 def chapter_prompt(day, number, chapters, focus, direction, history, previous):
     label, role, sources = chapters[number - 1]
     evidence = source_evidence(sources)
-    return f'''MASURADIO 88.8, {day}, part {number} of {len(chapters)}: {label}.
+    prompt = f'''MASURADIO 88.8, {day}, part {number} of {len(chapters)}: {label}.
 Exactly ONE Japanese female host NANA. Natural Japanese radio monologue, short spoken
 sentences and occasional one-person humor. No cohosts. Write 6-9 segments, each 5-500
 characters. Aim 700-1100 characters for report; 350-650 for brief/practice. Never pad.
@@ -137,6 +137,16 @@ For practice only, also output practice: {{"target":"...","action":"...","check"
 Each practice value must be a verbatim substring of the spoken script, at least 8 characters.
 Past headlines to avoid recycling: {json.dumps(history, ensure_ascii=False)[:1800]}
 '''
+    if role == 'practice':
+        prompt += '''
+Practice continuation: do not greet the audience or introduce NANA again.
+If an experiment needs a greeting as sample input, put it in paired Japanese quotes
+and explicitly label it nearby as an input example, sample or test phrase.
+Exception to the opening-only station rule: the FINAL segment may identify
+MASURADIO 88.8 as part of a clear farewell, such as また次回お会いしましょう or
+NANAがお届けしました. Do not say こんにちは or NANAです in that sign-off.
+'''
+    return prompt
 
 
 def _normalized(text):
@@ -147,11 +157,68 @@ def _substantive_sentences(text):
     return [s for s in re.split(r'[。！？!?\n]', _normalized(text)) if len(s) >= 24]
 
 
+def _quoted_spans(text):
+    """Return complete outer quote spans; malformed quotes grant no exception."""
+    pairs = {'「': '」', '『': '』', '“': '”', '"': '"'}
+    stack, spans = [], []
+    for index, char in enumerate(text):
+        if stack and char == stack[-1][1]:
+            start, _ = stack.pop()
+            if not stack:
+                spans.append((start, index + 1))
+        elif char in pairs:
+            stack.append((index, pairs[char]))
+        elif char in pairs.values():
+            return None
+    return None if stack else spans
+
+
+def _validate_continuation(texts, number, role):
+    greetings = re.compile(r'おはよう|こんにちは|こんばんは')
+    sample = re.compile(r'例文|サンプル|入力|フレーズ|テスト用|テスト文|読み上げ|録音用')
+    closing = re.compile(r'また(?:次回|明日)(?:[、。！!]|お会い|お耳に)|お届けしました|'
+                         r'お[聴聞]き(?:いただき)?ありがとうございました|さようなら|おやすみなさい')
+    for index, text in enumerate(texts):
+        text = unicodedata.normalize('NFKC', text)
+        spans = _quoted_spans(text)
+        checked = list(text)
+        outside = list(text)
+        for start, end in spans or []:
+            outside[start:end] = ' ' * (end - start)
+        outside_text = ''.join(outside)
+        for start, end in spans or []:
+            before = re.split(r'[。！？!?\n]', outside_text[:start])[-1][-40:]
+            after = re.split(r'[。！？!?\n]', outside_text[end:])[0][:40]
+            if sample.search(before + after):
+                # Only greeting matches in this framed sample are exempt. A
+                # host introduction or a second unquoted greeting still fails.
+                for match in greetings.finditer(text, start, end):
+                    checked[match.start():match.end()] = ' ' * (match.end() - match.start())
+        marker = None
+        if greetings.search(''.join(checked)):
+            marker = 'audience-greeting'
+        elif re.search(r'NANAです|ナナです', text, re.I):
+            marker = 'host-introduction'
+        elif re.search(r'MASURADIO\s*88', text, re.I):
+            signoff = (spans is not None and role == 'practice' and index == len(texts) - 1
+                       and closing.search(outside_text))
+            if not signoff:
+                marker = 'station-announcement'
+        if marker:
+            # Fixed labels only: public logs never include arbitrary draft or
+            # article text. The same diagnostics guide the bounded retry.
+            raise ValueError('Repeated opening/host introduction: '
+                             f'chapter={number}, segment_index={index}, marker={marker}. '
+                             'Continue without another greeting or host introduction; '
+                             'label quoted sample inputs explicitly and reserve station ID '
+                             'for the final practice farewell')
+
+
 def validate_editorial(parsed, sources, previous, number, role, broadcast_date=None):
     texts = [s['text'] for s in parsed['segments']]
     joined = '\n'.join(texts)
-    if number > 1 and re.search(r'おはよう|こんにちは|こんばんは|NANAです|ナナです|MASURADIO\s*88', joined, re.I):
-        raise ValueError('Repeated opening/host introduction')
+    if number > 1:
+        _validate_continuation(texts, number, role)
     old = [_normalized(s['text']) for s in previous]
     sentences = set()
     for text in texts:
