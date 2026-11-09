@@ -6,7 +6,6 @@ public episode metadata. No credentials, login, paywall bypass or paid AI calls.
 from __future__ import annotations
 
 import datetime as dt
-import html
 import hashlib
 import json
 import ipaddress
@@ -22,7 +21,9 @@ USER_AGENT = 'MASURADIO-evidence/1.0 (+public RSS digest)'
 TRACKING = {'fbclid', 'gclid', 'dclid', 'mc_cid', 'mc_eid', 'igshid',
             'ref_src', 'ref_url', 'vero_id', 'yclid'}
 MAX_ARTICLES = 7
-MAX_BYTES = 240_000
+# Modern official pages include large application shells. Still cap decoded bytes.
+MAX_BYTES = 2_000_000
+MAX_ROBOTS_BYTES = 64_000
 MIN_BODY_CHARS = 200
 MAX_EXCERPTS = 8
 MAX_EXCERPT_CHARS = 6000
@@ -172,18 +173,45 @@ def group_stories(items: list[dict]) -> list[dict]:
 
 
 class _Paragraphs(HTMLParser):
-    def __init__(self, article_url=""):
+    """Extract complete body blocks, with headings and list introductions intact.
+
+    Release pages have a large site UI inside <main>. Only their explicit rendered
+    Markdown body is evidence. Lists elsewhere require an article scope, rather
+    than treating navigation/menu links as release notes.
+    """
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+            'link', 'meta', 'param', 'source', 'track', 'wbr'}
+    SKIP = {'script', 'style', 'nav', 'footer', 'noscript', 'aside',
+            'form', 'button', 'menu'}
+
+    def __init__(self, article_url="", resolved_url=""):
         super().__init__(convert_charrefs=True)
-        self.article_url = normalize_url(article_url)
+        self.article_urls = {normalize_url(u) for u in (article_url, resolved_url) if u}
+        parsed = urlsplit(resolved_url or article_url)
+        self.release_page = (parsed.hostname == 'github.com' and
+                             bool(re.fullmatch(r'/[^/]+/[^/]+/releases/tag/[^/]+/?', parsed.path)))
+        self.stack = []
         self.skip = 0
         self.scopes = 0
-        self.in_para = 0
-        self.current: list[str] = []
+        self.articles = 0
+        self.releases = 0
+        self.has_article = False
+        self.block = None
+        self.heading = None
+        self.headings = []
+        self.list_introductions = []
+        self.previous_paragraph = ''
         self.scoped: list[str] = []
-        self.fallback: list[str] = []
+        self.article_scoped: list[str] = []
+        self.body_lengths: dict[str, int] = {}
         self.publication_dates: list[str] = []
         self.in_jsonld = False
         self.jsonld: list[str] = []
+
+    def _is_body(self, tag):
+        if self.release_page:
+            return bool(self.releases)
+        return bool(self.articles if tag in ('ul', 'ol') else self.scopes)
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
@@ -192,58 +220,130 @@ class _Paragraphs(HTMLParser):
         if tag == 'script' and attributes.get('type', '').lower() == 'application/ld+json':
             self.in_jsonld = True
             self.jsonld = []
-        if tag in ('script', 'style', 'nav', 'footer', 'header', 'noscript'):
-            self.skip += 1
-        if tag in ('article', 'main'):
-            self.scopes += 1
-        if tag == 'p':
-            self.in_para += 1
-            self.current = []
+        skipped = (tag in self.SKIP or (tag == 'header' and not self.articles) or
+                   'hidden' in attributes or attributes.get('aria-hidden') == 'true' or
+                   attributes.get('role') in ('navigation', 'complementary'))
+        scoped = tag in ('article', 'main') and not (self.skip or skipped)
+        article = tag == 'article' and scoped
+        self.has_article = self.has_article or article
+        release = (self.release_page and tag == 'div' and
+                   'markdown-body' in attributes.get('class', '').split() and
+                   not (self.skip or skipped))
+        if tag not in self.VOID:
+            self.stack.append((tag, skipped, scoped, article, release))
+            self.skip += skipped
+            self.scopes += scoped
+            self.articles += article
+            self.releases += release
+        if self.skip or skipped:
+            return
+        if self.block:
+            if tag in ('p', 'li', 'ul', 'ol', 'br'):
+                self.block['parts'].append(' ')
+            return
+        if self.release_page and tag in ('ul', 'ol') and self._is_body(tag):
+            self.list_introductions.append((len(self.stack), self.previous_paragraph))
+            self.previous_paragraph = ''
+        if tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6') and self._is_body(tag):
+            owner = next((i + 1 for i in range(len(self.stack) - 1, -1, -1)
+                          if self.stack[i][0] in ('article', 'section', 'main') or self.stack[i][4]), 0)
+            self.heading = {'depth': len(self.stack), 'level': int(tag[1]),
+                            'owner': owner, 'parts': []}
+        elif tag in (('p', 'li') if self.release_page else ('p', 'ul', 'ol')) and self._is_body(tag):
+            context = [text for _, text, _ in self.headings]
+            if tag in ('ul', 'ol') and self.previous_paragraph:
+                context.append(self.previous_paragraph)
+            if tag == 'li' and self.list_introductions and self.list_introductions[-1][1]:
+                context.append(self.list_introductions[-1][1])
+            self.block = {'depth': len(self.stack), 'tag': tag, 'parts': [],
+                          'context': context, 'article': bool(self.articles)}
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self.VOID:
+            self.handle_endtag(tag)
 
     def handle_data(self, data):
         if self.in_jsonld:
             self.jsonld.append(data)
-        if self.in_para and not self.skip:
-            self.current.append(data)
+        if not self.skip:
+            if self.block:
+                self.block['parts'].append(data)
+            elif self.heading:
+                self.heading['parts'].append(data)
+
+    def _jsonld_date(self):
+        try:
+            payload = json.loads(''.join(self.jsonld))
+            def visit(value):
+                if isinstance(value, list):
+                    for child in value:
+                        visit(child)
+                elif isinstance(value, dict):
+                    # Ignore organization/product dates and dateModified.
+                    types = value.get('@type', [])
+                    types = [types] if isinstance(types, str) else types
+                    refs = [value.get('url'), value.get('@id'), value.get('mainEntityOfPage')]
+                    refs = [r.get('@id') if isinstance(r, dict) else r for r in refs]
+                    matches_article = any(isinstance(r, str) and
+                                          normalize_url(r) in self.article_urls for r in refs)
+                    if matches_article and isinstance(types, list) and any(
+                            t in ('Article', 'NewsArticle', 'BlogPosting', 'TechArticle')
+                            for t in types if isinstance(t, str)):
+                        self.publication_dates.append(value.get('datePublished', ''))
+                    if '@graph' in value:
+                        visit(value['@graph'])
+            visit(payload)
+        except (ValueError, TypeError, RecursionError):
+            pass
 
     def handle_endtag(self, tag):
         if tag == 'script' and self.in_jsonld:
             self.in_jsonld = False
-            try:
-                payload = json.loads(''.join(self.jsonld))
-                def visit(value):
-                    if isinstance(value, list):
-                        for child in value:
-                            visit(child)
-                    elif isinstance(value, dict):
-                        # Ignore organization/product dates and dateModified.
-                        types = value.get('@type', [])
-                        types = [types] if isinstance(types, str) else types
-                        refs = [value.get('url'), value.get('@id'), value.get('mainEntityOfPage')]
-                        refs = [r.get('@id') if isinstance(r, dict) else r for r in refs]
-                        matches_article = any(isinstance(r, str) and self.article_url
-                                              and normalize_url(r) == self.article_url for r in refs)
-                        if matches_article and any(
-                                t in ('Article', 'NewsArticle', 'BlogPosting', 'TechArticle')
-                                for t in types if isinstance(t, str)):
-                            self.publication_dates.append(value.get('datePublished', ''))
-                        if '@graph' in value:
-                            visit(value['@graph'])
-                visit(payload)
-            except (ValueError, TypeError):
-                pass
-        if tag == 'p' and self.in_para:
-            line = re.sub(r'\s+', ' ', html.unescape(''.join(self.current))).strip()
-            if len(line) >= 20:
-                self.fallback.append(line)
-                if self.scopes:
-                    self.scoped.append(line)
-            self.in_para = max(0, self.in_para - 1)
-            self.current = []
-        if tag in ('article', 'main'):
-            self.scopes = max(0, self.scopes - 1)
-        if tag in ('script', 'style', 'nav', 'footer', 'header', 'noscript'):
-            self.skip = max(0, self.skip - 1)
+            self._jsonld_date()
+        index = next((i for i in range(len(self.stack) - 1, -1, -1)
+                      if self.stack[i][0] == tag), None)
+        if index is None:
+            return
+        depth = index + 1
+        if self.block and depth <= self.block['depth']:
+            # A parent closing around an unclosed block is not a complete claim.
+            if depth == self.block['depth'] and not self.skip:
+                line = re.sub(r'\s+', ' ', ''.join(self.block['parts'])).strip()
+                # Oversized blocks or heading paths are skipped, never sliced.
+                size = len(line) + sum(len(x) + 1 for x in self.block['context'])
+                if len(line) >= 20 and size <= MAX_EXCERPT_CHARS:
+                    excerpt = '\n'.join(self.block['context'] + [line])
+                    self.scoped.append(excerpt)
+                    if self.block['article']:
+                        self.article_scoped.append(excerpt)
+                    self.body_lengths[excerpt] = len(line)
+                self.previous_paragraph = line if self.block['tag'] == 'p' else ''
+            self.block = None
+        elif self.block and tag in ('p', 'li', 'ul', 'ol'):
+            self.block['parts'].append(' ')
+        if self.heading and depth <= self.heading['depth']:
+            if depth == self.heading['depth'] and not self.skip:
+                line = re.sub(r'\s+', ' ', ''.join(self.heading['parts'])).strip()
+                level = self.heading['level']
+                self.headings = [(n, text, owner) for n, text, owner in self.headings if n < level]
+                if line:
+                    self.headings.append((level, line, self.heading['owner']))
+                self.previous_paragraph = ''
+            self.heading = None
+        self.headings = [(n, text, owner) for n, text, owner in self.headings if owner < depth]
+        self.list_introductions = [(n, text) for n, text in self.list_introductions if n < depth]
+        for element, skipped, scoped, article, release in self.stack[index:]:
+            if article or release or element == 'section':
+                self.previous_paragraph = ''
+            self.skip -= skipped
+            self.scopes -= scoped
+            self.articles -= article
+            self.releases -= release
+        del self.stack[index:]
+        if not self.scopes and not self.releases:
+            self.headings = []
+            self.previous_paragraph = ''
 
 
 
@@ -283,8 +383,13 @@ def select_excerpts(lines: list[str], url: str) -> list[dict]:
 
 
 def _safe_public_https(url: str) -> bool:
-    parsed = urlsplit(url)
-    host = parsed.hostname or ''
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or '').lower().rstrip('.')
+        if parsed.port not in (None, 443):
+            return False
+    except (ValueError, TypeError):
+        return False
     if parsed.scheme != 'https' or not host or parsed.username or parsed.password:
         return False
     if host in ('localhost', 'metadata.google.internal', 'metadata', 'localhost.localdomain'):
@@ -293,35 +398,46 @@ def _safe_public_https(url: str) -> bool:
         ip = ipaddress.ip_address(host)
         return ip.is_global
     except ValueError:
+        # Alternative numeric IPv4 spellings can resolve to loopback even though
+        # ipaddress rejects them. Do not pass them to the HTTP client's resolver.
+        if re.fullmatch(r'(?:0x[0-9a-f]+|\d+)(?:\.(?:0x[0-9a-f]+|\d+))*', host, re.I):
+            return False
         return '.' in host and not host.endswith(('.local', '.internal', '.localhost'))
 
 
-def _bounded_get(session, url, limit=MAX_BYTES, allow_url=None):
+class EvidenceFetchError(ValueError):
+    """Fixed diagnostic codes only; never publish page content or error URLs."""
+
+
+def _bounded_get(session, url, limit=MAX_BYTES, allow_url=None, return_url=False):
     """No auto-redirects, stream cap, and HTTP timeout. Redirects checked again."""
     for _ in range(3):
         if not _safe_public_https(url):
-            raise ValueError('URL is not a public HTTPS article')
+            raise EvidenceFetchError('unsafe_article_url')
         if allow_url is not None and not allow_url(url):
-            raise ValueError('robots disallowed article URL')
+            raise EvidenceFetchError('robots_disallowed_or_unavailable')
         response = session.get(url, timeout=(4, 9), stream=True, allow_redirects=False,
                                headers={'User-Agent': USER_AGENT, 'Accept': 'text/html,text/plain'})
         try:
             if response.status_code in (301, 302, 303, 307, 308):
-                target = urljoin(url, response.headers.get('Location', ''))
+                if not response.headers.get('Location'):
+                    raise EvidenceFetchError('redirect_missing_location')
+                target = urljoin(url, response.headers['Location'])
                 url = target
                 continue
             response.raise_for_status()
             if 'text/html' not in response.headers.get('Content-Type', 'text/html'):
-                raise ValueError('Not an HTML page')
+                raise EvidenceFetchError('unsupported_content_type')
             payload = bytearray()
             for chunk in response.iter_content(chunk_size=8192):
                 payload.extend(chunk)
                 if len(payload) > limit:
-                    raise ValueError('Article exceeds download size limit')
-            return bytes(payload).decode(response.encoding or 'utf-8', errors='replace')
+                    raise EvidenceFetchError('article_size_limit')
+            markup = bytes(payload).decode(response.encoding or 'utf-8', errors='replace')
+            return (markup, url) if return_url else markup
         finally:
             response.close()
-    raise ValueError('Too many redirects')
+    raise EvidenceFetchError('redirect_limit')
 
 
 class ArticleFetcher:
@@ -335,20 +451,29 @@ class ArticleFetcher:
         host = urlsplit(url).netloc
         if host not in self.robots_cache:
             robots_url = f'https://{host}/robots.txt'
+            r = None
             try:
                 r = self.session.get(robots_url, timeout=(3, 5),
-                                     allow_redirects=False,
+                                     allow_redirects=False, stream=True,
                                      headers={'User-Agent': USER_AGENT})
                 if r.status_code == 404:
                     self.robots_cache[host] = True
                 elif r.status_code != 200:
                     self.robots_cache[host] = False
                 else:
+                    payload = bytearray()
+                    for chunk in r.iter_content(chunk_size=8192):
+                        payload.extend(chunk)
+                        if len(payload) > MAX_ROBOTS_BYTES:
+                            raise EvidenceFetchError('robots_size_limit')
                     p = RobotFileParser()
-                    p.parse(r.text.splitlines())
+                    p.parse(bytes(payload).decode(r.encoding or 'utf-8', errors='replace').splitlines())
                     self.robots_cache[host] = p
-            except requests.RequestException:
+            except (requests.RequestException, ValueError):
                 self.robots_cache[host] = False
+            finally:
+                if r is not None:
+                    r.close()
         rule = self.robots_cache[host]
         return rule if isinstance(rule, bool) else rule.can_fetch(USER_AGENT, url)
 
@@ -360,18 +485,22 @@ class ArticleFetcher:
             result['fetch_reason'] = 'robots_disallowed_or_unavailable'
             return result
         try:
-            markup = _bounded_get(self.session, url, allow_url=self.allowed)
-            parser = _Paragraphs(url)
+            markup, resolved_url = _bounded_get(self.session, url, allow_url=self.allowed,
+                                                return_url=True)
+            parser = _Paragraphs(url, resolved_url)
             parser.feed(markup)
+            parser.close()
             # Only a recognizable main/article scope is strong enough evidence.
             # Site-wide paragraphs could be advertising, cookie notices or nav.
-            lines = parser.scoped
-            total = sum(len(p) for p in lines)
+            lines = (parser.article_scoped if parser.has_article and not parser.release_page
+                     else parser.scoped)
+            # Repeated headings/list introductions cannot inflate body coverage.
+            total = sum(parser.body_lengths[line] for line in set(lines))
             if total < MIN_BODY_CHARS:
                 result['fetch_reason'] = 'insufficient_article_text'
                 return result
             excerpts = select_excerpts(lines, url)
-            if sum(len(x['text']) for x in excerpts) < MIN_BODY_CHARS:
+            if sum(parser.body_lengths[x['text']] for x in excerpts) < MIN_BODY_CHARS:
                 result['fetch_reason'] = 'insufficient_bounded_article_text'
                 return result
             result['evidence_status'] = 'body'
@@ -379,6 +508,16 @@ class ArticleFetcher:
             result['facts'] = [x['text'] for x in excerpts]
             result['article_published_date'] = _publication_date(parser.publication_dates)
             result['fetch_reason'] = 'verified_article_paragraphs'
+            return result
+        except EvidenceFetchError as error:
+            result['fetch_reason'] = str(error)
+            return result
+        except requests.HTTPError as error:
+            status = error.response.status_code if error.response is not None else None
+            result['fetch_reason'] = f'http_{status}' if isinstance(status, int) else 'http_error'
+            return result
+        except requests.Timeout:
+            result['fetch_reason'] = 'request_timeout'
             return result
         except (requests.RequestException, ValueError, UnicodeError) as error:
             result['fetch_reason'] = type(error).__name__
