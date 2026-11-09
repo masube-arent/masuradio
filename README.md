@@ -69,3 +69,9 @@ Citation transport recovery (2026-11-09):
 - The writer selects short chapter-local excerpt IDs instead of retyping long source quotes. Code validates each reference and binds it to the original exact, complete excerpt; the semantic audit sees the original source IDs and text.
 - Unknown or malformed references and incorrect explicit legacy quotes still fail. Per-story source binding, numerical checks and the full meaning/usefulness audit remain required; reference validity alone does not prove a claim.
 - Writer temperature is 0.3 for factual reporting. Citation and numeral failures provide fixed diagnostic categories and claim or segment positions without logging arbitrary rejected draft text.
+
+
+Numeric retry recovery (2026-11-09):
+- Exact per-segment numeric evidence checks remain unchanged. Titles, feed metadata and version labels outside the cited article excerpts do not establish support. Writers must preserve the excerpt's numeric notation or omit the unsupported number.
+- Numeric rejection now returns the affected sentence and bounded repair context to the same writer request, because API retries do not remember earlier drafts. Numeric rejection logs retain only positions and fixed diagnostic categories; rejected speech, arbitrary values and repair context are not logged.
+- Valid citations, per-story coverage and the complete semantic audit remain mandatory before TTS and publication. This is targeted repair feedback, not automatic rewriting or acceptance of missing evidence.
