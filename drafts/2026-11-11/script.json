@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-11",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261111-work-v1",
+  "episode_title": "AIの準備と変更の見届け方：C++解析とClaudeの接続アプリ",
+  "chapters": [
+    {
+      "title": "CopilotのC++解析、MSBuildの準備を自動化",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "C++ language server now auto-configures MSBuild builds",
+          "url": "https://github.blog/changelog/2026-11-10-c-language-server-now-auto-configures-msbuild-builds/",
+          "article_published_date": "2026-11-10",
+          "retrieved_at": "2026-11-10T20:49:19.002546+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "The compile commands extractor is bundled directly"
+            },
+            {
+              "id": "e2",
+              "text": "An active GitHub Copilot subscription is required."
+            },
+            {
+              "id": "e3",
+              "text": "For other build systems"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。今日のマスラジオは、AIに作業を任せる前の準備と、任せた変更の見届け方。まずはGitHubの開発ツールです。Copilot CLI向けのMicrosoft C++ Language Serverに、MSBuildのコンパイル情報を取り出す機能が組み込まれました。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "これまでは、コンパイル情報のファイルを自分で用意するか、Copilotが設定用スキルを探して動かす必要がありました。更新後は、プロジェクトを開いて言語サーバーを起動するときに、抽出機能を自動で呼び出します。定義への移動や参照検索に必要な準備の変更です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象を広げすぎないでください。今回の自動化はMSBuildのC++プロジェクトについての案内です。CMakeでは既存の生成スキル、独自のビルド方式では専用の抽出スキル、または自前のコンパイル情報を使う方法が示されています。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "利用には、有効なGitHub Copilotの契約が必要です。公式の導入手順ではプラグインのインストールと使用許諾への同意も求められます。記事は準備時のトークン使用削減に触れていますが、具体的な削減率は示していません。効果の数字を決めつけず、対象のビルド方式と導入条件を押さえるニュースです。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E2"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-10-c-language-server-now-auto-configures-msbuild-builds/",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Claudeの接続アプリ、画面と承認の境界",
+      "role": "report",
+      "sources": [
+        {
+          "source": "Anthropic",
+          "title": "Your apps can now open in Claude, and Claude can work in them",
+          "url": "https://claude.com/resources/articles/interactive-connectors-full-tool",
+          "article_published_date": "2026-11-10",
+          "retrieved_at": "2026-11-10T20:49:19.002557+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "where a connector supports it"
+            },
+            {
+              "id": "e2",
+              "text": "rolling out on the web"
+            },
+            {
+              "id": "e3",
+              "text": "public preview for developers"
+            },
+            {
+              "id": "e4",
+              "text": "Admins can restrict a connector’s tools"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "続いてClaudeの更新です。対応するコネクターでは、会話の横や全画面でアプリを開き、Claudeに同じ画面で変更を頼めるようになります。ただし、あらゆる連携先が一斉に対応するという発表ではありません。対応するコネクターに限る、という条件が付いています。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "提供はウェブとデスクトップアプリで、全プランへの段階的な展開です。新しいClaudeへアカウントが更新されるか、組織が有効にすると機能が表示されます。発表されたからといって、手元ですぐ使えるとは限らない点に注意してください。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "開発者向けには、MCP Appsの拡張をさらに扱えるようになったと説明されています。アプリ自身の画面をAIアプリに持ち込む仕組みで、Claude以外でも対応するAIアプリなら動かせます。今回の機能への開発者向け対応は、パブリックプレビューです。正式版と読み替えないでください。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "変更の承認は、既存のコネクター操作と同じように行います。管理者はコネクターのツールを従来どおり制限できます。便利な画面が増えても、操作権限を無制限に渡すという話ではありません。対象アプリ、アカウントへの展開、組織の許可を分けて読むことが大切です。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E4"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://claude.com/resources/articles/interactive-connectors-full-tool",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：変更差分の受入テストを先に作る",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "Anthropic",
+          "title": "Your apps can now open in Claude, and Claude can work in them",
+          "url": "https://claude.com/resources/articles/interactive-connectors-full-tool",
+          "article_published_date": "2026-11-10",
+          "retrieved_at": "2026-11-10T20:49:19.002557+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e3",
+              "text": "public preview for developers"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。今日試すのは、AIの編集を見届けるための、小さな受入テストです。新しいコネクターを契約したり、会社の文書を接続したりする必要はありません。使うのは自分で作る架空の申請文。すでに利用を認められた環境がなければ、紙やローカルのメモで手順を作るところまでにしましょう。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空の備品申請を使った、変更前後の差分確認です。たとえば、会議室用のケーブルを購入したい、という練習用の文を作ります。品名と数量、必要な理由を書き、どれが変更禁止なのかを先に印で示してください。実在の社員名や取引先、見積金額、社内の未公開情報は使いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、申請文の表現だけを整えるよう頼み、変更前と変更後を並べて保存することです。指示には、読みやすさだけを改善し、数量と用途は変えず、承認済みとは書かない、と添えます。編集そのものより先に、守る条件を渡すのが今回の工夫です。対応アプリがなくても、元の文と修正文を並べる練習ならできます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、品名、数量、申請理由の意味が変わらず、変更箇所を人が説明できることです。読みやすくなった、という印象だけで合格にしないでください。元の文にある項目を順番に照合し、消えた条件や足された断定がないか見ます。差分の理由を説明できない箇所は、採用せず保留にします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "さらに、よくない修正文も自分で作ってみましょう。数量を変えた版や、承認済みという言葉を勝手に足した版です。チェック表がその誤りを見つけられるか試します。AIがうまく直すかだけでなく、人の確認方法が失敗を拾えるかを確かめる練習です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、数量の変更、存在しない承認の追加、別ファイルへの操作、または追加の権限や費用の要求です。その場で許可や契約を追加せず、練習を止めて管理者に確認してください。本番の申請、送信、購入、共有は、この練習には含めません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "最後に残すのは、変更前の文、変更後の文、採用または保留にした理由です。この提案で時短効果が出たとはまだ言えません。まず変更の境界を守れたかを記録し、その後に実務へ持ち込めるか判断しましょう。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空の備品申請を使った、変更前後の差分確認です。",
+        "action": "操作は、申請文の表現だけを整えるよう頼み、変更前と変更後を並べて保存することです。",
+        "check": "確認は、品名、数量、申請理由の意味が変わらず、変更箇所を人が説明できることです。",
+        "stop": "中止条件は、数量の変更、存在しない承認の追加、別ファイルへの操作、または追加の権限や費用の要求です。"
+      }
+    }
+  ]
+}
