@@ -37,5 +37,9 @@ def pending(day, request_file=None, episodes=None):
 
 
 if __name__ == '__main__':
-    day = dt.datetime.now(JST).date().isoformat()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--date', default=dt.datetime.now(JST).date().isoformat())
+    day = parser.parse_args().date
+    dt.date.fromisoformat(day)
     print('true' if pending(day) else 'false')

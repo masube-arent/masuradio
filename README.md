@@ -1,12 +1,16 @@
 # MASURADIO 88.8
 
-AI-assisted development radio. Daily Japanese MP3 show using Gemini and edge-tts, hosted on GitHub Pages.
+Japanese AI/DX radio hosted on GitHub Pages. Work researches public primary sources and writes a reviewed NANA script; GitHub Actions validates, synthesizes with edge-tts, and publishes it.
 
-Setup: Add `GEMINI_API_KEY` in Settings > Secrets and variables > Actions, enable GitHub Pages (GitHub Actions), then run the Daily Radio workflow.
+Current setup: GitHub Pages uses GitHub Actions. Submit `drafts/YYYY-MM-DD/script.json` and its independent, hash-bound `review.json` through a reviewed PR. Merging to main triggers audio generation and publication for today's JST date. See [Work production workflow](editorial/WORKFLOW.md). The daily production workflow no longer calls Gemini or needs its API key; the old writer remains available only as legacy code, not as an automatic fallback.
 
-Reliability: A separate `Validate MASURADIO` workflow checks Python, unit tests and player JavaScript on code changes. The daily workflow retries temporary Gemini failures, validates MP3/JSON integrity, and preserves complete audio even when a show runs outside the preferred 10–20 minutes. Publish validates the archive before deployment. Scheduled broadcasts use concurrency protection and retry Git push conflicts.
+Reliability: `Validate MASURADIO` checks Python, unit tests, player JavaScript, and every submitted script/review without paid calls. Production pins one JST date, requires reviewed input before TTS, validates the MP3/JSON pair, and preserves complete audio even outside the preferred 10–20 minutes. Publish validates the archive before deployment. Concurrency protection, input hashes, and completed-episode checks prevent duplicate generation; missing input or a failed check preserves older broadcasts.
 
-Limits: `edge-tts` is an unofficial external service; outages, missing API credit, GitHub scheduler delays or permissions errors can still prevent a broadcast. A failed generation should remain a failure rather than reporting a false success. Audio, sources and scripts are public. No billing fallback is configured.
+Limits: `edge-tts` is an unofficial external service; outages, delayed/missing Work input, GitHub scheduler delays, or permissions errors can prevent a broadcast. Failures remain failures rather than false success. Audio, scripts, submitted excerpts, review records, and source notes are public. Use public information and short permissible quotations only. Work consumes its own plan allowance. No paid fallback is configured. GitHub cron renders an already supplied script; it does not itself launch ChatGPT Work research. Schedule that producer separately and verify its first runs.
+
+Current editorial format (2026-11-10): verified news followed by one clearly labeled DX proposal with a target, action, observable check, and stop condition. Factual prerequisites need evidence; proposed benefits are not measured outcomes. NANA remains at the existing normal synthesis speed. Playback-speed feedback did not change the audio rate.
+
+The sections below record the earlier Gemini pipeline and its retained offline contracts. They are historical where they refer to automated Gemini writing/auditing. New Work submissions receive independent source/content review before merge instead, and still pass the deterministic citation, number, coverage, and continuity checks.
 
 Editorial diversity: 7 distinct weekday pillars (models/research, useful AI apps, automation/agents, audio/video/images, safety/cost, playful experiments, and real-world impact). Official RSS feeds cover multiple AI publishers. Prereleases are filtered, stories are distributed across publishers, and recently featured source URLs are deprioritized. Each verified story is reported once. Weekday pillars guide selection, but the spoken theme and title follow the available evidence.
 

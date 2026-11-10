@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       replace_existing:
-        description: 'Rebuild today’s episode using valid cached stages (may incur Gemini usage)'
+        description: 'Replace today’s episode from the reviewed Work script, reusing valid audio stages'
         required: false
         default: false
         type: boolean
@@ -18,7 +18,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/daily.yml'
-      - 'scripts/generate.py'
+      - 'scripts/**'
+      - 'drafts/**'
       - '.github/rebuild-request.json'
 permissions:
   contents: write
@@ -27,10 +28,13 @@ concurrency:
   cancel-in-progress: false
 jobs:
   broadcast:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -42,27 +46,38 @@ jobs:
           # Another queued run may already have published today's episode.
           git fetch origin main
           git checkout -B main origin/main
+      - name: Cache date
+        id: day
+        run: echo "today=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
       - name: Check whether today's episode already exists
         id: existing
         env:
           REPLACE_EXISTING: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_existing }}
+          RADIO_DATE: ${{ steps.day.outputs.today }}
         run: |
           # A reviewed request is consumed only by a successfully published pair.
           # The latest-main refresh and concurrency group prevent duplicate runs.
-          REQUEST_PENDING=$(python scripts/rebuild_request.py)
+          REQUEST_PENDING=$(python scripts/rebuild_request.py --date "$RADIO_DATE")
           if [ "$REPLACE_EXISTING" = "true" ] || [ "$REQUEST_PENDING" = "true" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Explicit replacement requested; keep published files until new audio passes validation"
-          elif python scripts/verify.py --episode; then
+          elif python scripts/verify.py --episode "$RADIO_DATE"; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
             echo "Valid episode for today already exists; skipping Gemini and TTS"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "Episode absent or invalid; generating today's episode"
           fi
-      - name: Cache date
-        id: day
-        run: echo "today=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+      - name: Validate today's reviewed Work script
+        if: steps.existing.outputs.ready != 'true'
+        env:
+          RADIO_DATE: ${{ steps.day.outputs.today }}
+        run: |
+          if [ ! -f "drafts/$RADIO_DATE/script.json" ] || [ ! -f "drafts/$RADIO_DATE/review.json" ]; then
+            echo "::error::Today's reviewed Work script has not arrived. Existing broadcasts stay published. No paid fallback is run."
+            exit 1
+          fi
+          python scripts/work_script.py --date "$RADIO_DATE"
       - name: Restore MASURADIO stage cache
         if: steps.existing.outputs.ready != 'true'
         uses: actions/cache/restore@v4
@@ -74,11 +89,18 @@ jobs:
       - name: Generate episode
         if: steps.existing.outputs.ready != 'true'
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-2.5-flash
-        run: python scripts/generate.py
+          RADIO_DATE: ${{ steps.day.outputs.today }}
+          REPLACE_EXISTING: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_existing }}
+        run: |
+          if [ "$REPLACE_EXISTING" = "true" ]; then
+            python scripts/publish_work.py --date "$RADIO_DATE" --replace-existing
+          else
+            python scripts/publish_work.py --date "$RADIO_DATE"
+          fi
       - name: Validate generated episode
-        run: python scripts/verify.py --episode
+        env:
+          RADIO_DATE: ${{ steps.day.outputs.today }}
+        run: python scripts/verify.py --episode "$RADIO_DATE"
       - name: Save MASURADIO stage cache
         if: always() && steps.existing.outputs.ready == 'false'
         uses: actions/cache/save@v4
