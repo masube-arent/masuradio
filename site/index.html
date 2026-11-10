@@ -59,13 +59,13 @@ function showChapters(chapters){
 function showEpisode(e){
   $("current-date").textContent=dateLabel(e.date);
   $("current-title").textContent=e.episode_title||e.title||"MASURADIO 88.8";
-  $("current-topic").textContent="曜日企画："+((e.topics||[]).join(" / ")||"初回特別放送");
+  $("current-topic").textContent=(e.production_method==="work-researched-script"?"今日の内容：":"曜日企画：")+((e.topics||[]).join(" / ")||"初回特別放送");
   $("current-meta").replaceChildren();
   const chip=document.createElement("span");chip.className="chip";chip.textContent=durationLabel(e.duration_seconds);$("current-meta").append(chip);
   if(e.host==="NANA"){const host=document.createElement("span");host.className="chip";host.textContent="DJ ナナ｜ひとり語り";$("current-meta").append(host)}
   playback.select(e)
   const usage=e.gemini_usage;
-  $("usage").textContent=usage?"Gemini使用量：入力 "+Number(usage.prompt_tokens||0).toLocaleString()+" / 出力 "+Number(usage.output_tokens||0).toLocaleString()+" / 推論 "+Number(usage.thinking_tokens||0).toLocaleString()+" tokens · API "+Number(usage.api_calls||0)+"回 · 推定 $"+Number(usage.estimated_usd||0).toFixed(4)+"（有料枠の参考値）":"";
+  $("usage").textContent=e.production_method==="work-researched-script"?"Workで調査・台本確認 → 音声化｜Gemini APIの利用なし（Workの利用枠は別途消費）":usage?"Gemini使用量：入力 "+Number(usage.prompt_tokens||0).toLocaleString()+" / 出力 "+Number(usage.output_tokens||0).toLocaleString()+" / 推論 "+Number(usage.thinking_tokens||0).toLocaleString()+" tokens · API "+Number(usage.api_calls||0)+"回 · 推定 $"+Number(usage.estimated_usd||0).toFixed(4)+"（有料枠の参考値）":"";
   const link=$("source-link");link.href="./episodes/"+encodeURIComponent(e.date)+".json";link.classList.remove("hidden");
   document.querySelectorAll(".episode").forEach(b=>b.setAttribute("aria-current",String(b.dataset.date===e.date)));
 }

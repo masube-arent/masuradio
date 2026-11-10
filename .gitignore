@@ -1,2 +1,3 @@
 .radio-cache/
 __pycache__/
+.venv/

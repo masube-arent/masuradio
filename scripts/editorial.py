@@ -1,4 +1,8 @@
-"""Offline editorial contracts. Evidence stays private, never in episode JSON."""
+"""Offline editorial contracts. Evidence is omitted from episode JSON.
+
+Work submissions may contain short public-source excerpts in the public repo;
+neither repository files nor Actions caches are private evidence storage.
+"""
 import json
 import re
 import unicodedata
