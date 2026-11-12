@@ -1,0 +1,361 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-12",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261112-work-v1",
+  "episode_title": "AIに渡すIssueと連携の条件を整理",
+  "chapters": [
+    {
+      "title": "個人開発のIssueにも種類と項目",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Issue types and fields are available for personal accounts",
+          "url": "https://github.blog/changelog/2026-11-11-issue-types-and-fields-are-available-for-personal-accounts/",
+          "article_published_date": "2026-11-11",
+          "retrieved_at": "2026-11-11T20:15:55+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "personal accounts"
+            },
+            {
+              "id": "e2",
+              "text": "to 25 issue types."
+            },
+            {
+              "id": "e3",
+              "text": "to 25 issue fields"
+            },
+            {
+              "id": "e4",
+              "text": "single-select, and multi-select fields."
+            },
+            {
+              "id": "e5",
+              "text": "REST and GraphQL APIs and webhooks"
+            },
+            {
+              "id": "e6",
+              "text": "creating an issue"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。GitHubが、個人アカウント所有のリポジトリでも、Issueの種類と項目を正式提供しました。個人開発やオープンソースの課題管理で、入力の形をそろえられる更新です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "個人アカウント設定のPlanningから編集できます。種類の初期値はBug、Task、Feature。種類は最大25個です。項目はPriority、Effort、Start date、Target dateが初期値で、こちらも最大25個まで作れます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "項目には、文字、数値、日付、単一選択、複数選択が使えます。Issueの作成時にも既存Issueの画面でも設定でき、Projectsの独自ビューや一括更新にも使えます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "RESTとGraphQLのAPI、webhookからも、種類と項目をプログラムで管理できます。今回の対象は個人アカウント所有のリポジトリです。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E6"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E5"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-11-issue-types-and-fields-are-available-for-personal-accounts/",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Workspace MCP、以前告知された認証設定の期限",
+      "role": "report",
+      "sources": [
+        {
+          "source": "Google for Developers",
+          "title": "Google Workspace release notes",
+          "url": "https://developers.google.com/workspace/release-notes",
+          "article_published_date": "2026-10-12",
+          "retrieved_at": "2026-11-11T20:15:55+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Google Workspace MCP servers"
+            },
+            {
+              "id": "e2",
+              "text": "AI-powered agent"
+            },
+            {
+              "id": "e3",
+              "text": "November 11, 2026"
+            },
+            {
+              "id": "e4",
+              "text": "by November 12, 2026"
+            },
+            {
+              "id": "e5",
+              "text": "not AI agents, like those"
+            },
+            {
+              "id": "e6",
+              "text": "Developer Preview Program"
+            }
+          ],
+          "section_heading": "October 12, 2026"
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "続いては新発表ではなく、Googleが以前告知したWorkspace MCPの認証設定の期限です。対象のOAuthクライアントには、Google Auth PlatformのClientsで、AIエージェントに使う指定が必要とされています。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "公式記録では、2026年11月11日から、指定のないクライアントのリクエストを拒否します。さらに2026年11月12日までに指定されないクライアントは、その後も非エージェント扱いのまま、Workspace MCPを呼べなくなります。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "その後MCPを使うには、エージェントとして指定した新しいクライアントを作り、アプリ側を更新する必要がある、という案内です。締切の時刻やタイムゾーンは記載されていません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "一方、WorkspaceのREST APIだけを呼ぶなど、AIエージェントではない連携は、この変更の対象外です。対象のMCPサーバーは開発者向けプレビューです。一般のREST連携まで、まとめて変更が必要だと受け取らないでください。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E5"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E6"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://developers.google.com/workspace/release-notes",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Dependabot、活動がないリポジトリへの停止予告",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Dependabot alerts will pause on inactive repositories",
+          "url": "https://github.blog/changelog/2026-11-10-dependabot-alerts-will-pause-on-inactive-repositories/",
+          "article_published_date": "2026-11-10",
+          "retrieved_at": "2026-11-11T20:15:55+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "December 8, 2026"
+            },
+            {
+              "id": "e2",
+              "text": "no activity in the past year"
+            },
+            {
+              "id": "e3",
+              "text": "archived, not deleted"
+            },
+            {
+              "id": "e4",
+              "text": "Any push to the repository"
+            },
+            {
+              "id": "e5",
+              "text": "an enforced security configuration"
+            },
+            {
+              "id": "e6",
+              "text": "GitHub Enterprise Server"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "GitHubは、2026年十二月8日から、過去一年間活動のない大半のリポジトリで、Dependabot alertsをオフにすると予告しました。既存の警告は削除ではなく、アーカイブされます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "活動に数えるのは、任意のブランチやタグへのpush、リポジトリの作成、Dependabot alertsをオンにすることです。pushすると自動で再有効化され、設定からオンにもできます。どちらも警告を復元し、一年の期間が再スタートします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "例外もあります。Dependabot alertsを有効にするセキュリティ構成が強制適用されている場合や、enterpriseのポリシーでリポジトリ管理者による警告の切り替えを許可していない場合は、停止対象から外れます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "変更はgithub.comの全プランと、データ所在地を指定するEnterprise Cloudに適用されます。GitHub Enterprise Serverには適用されません。今すぐ全リポジトリの警告が止まった、というニュースではありません。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E5"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E6"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-10-dependabot-alerts-will-pause-on-inactive-repositories/",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：AIに渡すIssueの着手条件をそろえる",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Issue types and fields are available for personal accounts",
+          "url": "https://github.blog/changelog/2026-11-11-issue-types-and-fields-are-available-for-personal-accounts/",
+          "article_published_date": "2026-11-11",
+          "retrieved_at": "2026-11-11T20:15:55+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "personal accounts"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。新しいIssue項目をすぐ増やす前に、AIへ渡す不具合報告の形を、小さく設計してみましょう。今日は公開リポジトリも本番の設定も変えず、架空のアプリだけで試します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空のアプリの不具合を、AIに渡す前に着手可能か仕分けることです。練習用に、メモ一覧で検索を解除しても、全件表示へ戻らない、という依頼を作ります。もう一つは、同じアプリで、なんだか遅い、という依頼です。実在の利用者や社内案件の情報は入れません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、Issueの本文案と分類項目を、ローカルのメモに分けて書くことです。本文には、操作手順、期待した表示、実際の表示を書きます。分類項目の案は、種類、再現情報、着手判定。種類はBug、再現情報は、あり、なし、未確認。着手判定は、情報待ち、調査可能、としてみましょう。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "検索の依頼には、検索語を入れる、解除する、絞り込みが残る、という架空の手順を書きます。一方、遅いという依頼には、どの操作なのかも時間も書かれていません。この空欄を推測で埋めず、追加で聞く質問に変えるのが工夫です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "利用を認められたAI環境があれば、この架空の本文だけを渡し、事実を補わず分類案と不足情報を返して、と頼んでみてください。AIを使わず、手で分類するだけでも構いません。未確認を、なしや問題なしに置き換えないルールを添えます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、再現手順がない依頼を、着手可能と判定していないことです。遅いという依頼には、どの画面か、何をしたか、期待する動作は何か、という質問が残るはずです。検索の依頼でも、調査可能は修正完了や本番投入の許可ではありません。分類結果と実行の承認を分けましょう。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、本物のログや認証情報の入力、Issueの公開、本番への書き込み、権限変更、または追加費用が必要になった場合です。今日残すのは、架空のIssue本文、項目案、不足情報への質問です。時短効果を決めつけず、曖昧な依頼をそのままAIに渡さない形が作れたかを見てください。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空のアプリの不具合を、AIに渡す前に着手可能か仕分けることです。",
+        "action": "操作は、Issueの本文案と分類項目を、ローカルのメモに分けて書くことです。",
+        "check": "確認は、再現手順がない依頼を、着手可能と判定していないことです。",
+        "stop": "中止条件は、本物のログや認証情報の入力、Issueの公開、本番への書き込み、権限変更、または追加費用が必要になった場合です。"
+      }
+    }
+  ]
+}
