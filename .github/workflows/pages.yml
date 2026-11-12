@@ -20,6 +20,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,3 +35,7 @@ jobs:
           path: public
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify live archive matches this deployment
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: python scripts/verify_live.py --base-url "$PAGE_URL"

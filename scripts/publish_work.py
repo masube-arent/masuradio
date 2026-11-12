@@ -5,7 +5,9 @@ import argparse
 import asyncio
 import datetime as dt
 import json
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 
@@ -31,6 +33,18 @@ def publish(root, day, replace_existing=False):
         except (ValueError, RuntimeError, OSError, subprocess.SubprocessError):
             old = None
         if old and old.get('script_hash') == prepared['script_hash']:
+            request = rebuild_request.request_id(day, root / '.github/rebuild-request.json')
+            if request and old.get('rebuild_request_id') != request:
+                # Consume an authorized request without synthesizing identical speech.
+                # Validate the updated pair before atomically replacing only its JSON.
+                updated = dict(old, rebuild_request_id=request)
+                with tempfile.TemporaryDirectory(prefix='.radio-review-', dir=episodes) as directory:
+                    staged = Path(directory)
+                    shutil.copyfile(episodes / f'{day}.mp3', staged / f'{day}.mp3')
+                    stage_resume.atomic_json(staged / f'{day}.json', updated)
+                    verify.check_episode(day, base=staged, probe=True)
+                    os.replace(staged / f'{day}.json', metadata_path)
+                old = updated
             print('Completed Work script already published; no TTS or Gemini call')
             return old
         if old and not replace_existing:

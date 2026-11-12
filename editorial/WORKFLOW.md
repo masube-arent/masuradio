@@ -53,3 +53,15 @@ The review checklist is defined by `REVIEW_CHECKS` in `scripts/work_script.py`. 
 - GitHub cron cannot initiate a Work session by itself. Do not describe daily Work research as configured until its separate scheduled task has been created and verified.
 
 Keep legacy Gemini recovery changes separate. Neither an absent Work draft nor a rejected Work review authorizes a billing fallback.
+
+## Recovery and delivery checks (2026-11-12)
+
+A queued validation run with no jobs has not tested the package. Do not merge on the strength of local tests alone. When a PR run remains queued for more than 15 minutes, inspect that exact head, its jobs, and current GitHub status rather than silently waiting through every release window. A single retry of unchanged reviewed content may recover a stuck run; record the new head and require its complete `Validate MASURADIO` result. Never create a second daily PR or repeatedly retry without checking current state. The validation concurrency group supersedes older runs for the same PR when a newer run arrives. It does not guarantee runner admission or put a timeout on the external queue.
+
+`Daily MASURADIO` now refreshes main before installing its dependencies. Its readiness summary distinguishes a valid existing broadcast, ready reviewed input, missing input, and invalid/stale review, with the checked main SHA and fixed JST target date. Missing or rejected input still fails before TTS or commit; it is not disguised as a completed broadcast. Stage-cache restore/save failures are best-effort, while generation, audio validation, and repository commit failures remain fatal.
+
+For an explicitly authorized late recovery, the existing manual workflow accepts `broadcast_date` in strict `YYYY-MM-DD` form. Blank means the current JST date. Only today and the preceding six JST dates are accepted so recovery stays inside the seven-day archive window. The target is fixed once for all stages, including a run crossing midnight. A valid existing episode is still skipped; replacement needs the separate explicit replacement input or an authorized reviewed rebuild request. There is no automatic historical backfill. A new request for an already completed identical script consumes the request in validated metadata without synthesizing the same audio again.
+
+After Pages deployment, a read-only delivery check compares the deployed archive index, every referenced episode JSON, and MP3 bytes with that deployment's validated artifact. Retries are bounded for short propagation or transport delays. A delivery-check failure does not regenerate audio: inspect Pages and retry publication. A successful historical archive deployment is not evidence that today's episode exists; the producer must still check its requested date and script hash before notifying the listener.
+
+GitHub scheduling/admission, network delivery, and the unofficial TTS service remain external failure risks. These safeguards improve recovery and make missing output explicit; they do not promise uninterrupted production.
