@@ -8,8 +8,13 @@ on:
     - cron: '10 2 * * *'
   workflow_dispatch:
     inputs:
+      broadcast_date:
+        description: 'Optional YYYY-MM-DD JST date (today or preceding six days); blank means today'
+        required: false
+        default: ''
+        type: string
       replace_existing:
-        description: 'Replace today’s episode from the reviewed Work script, reusing valid audio stages'
+        description: 'Replace the selected date’s episode from the reviewed Work script, reusing valid audio stages'
         required: false
         default: false
         type: boolean
@@ -35,51 +40,36 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: Refresh latest main before installing dependencies
+        run: |
+          # Queued runs must install requirements from the same main as the code.
+          git fetch origin main
+          git checkout -B main origin/main
+      - name: Resolve fixed broadcast date
+        id: day
+        env:
+          REQUESTED_DATE: ${{ github.event_name == 'workflow_dispatch' && inputs.broadcast_date || '' }}
+        run: python3 scripts/production_readiness.py --resolve-date --date "$REQUESTED_DATE"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pip install -r requirements.txt
-      - name: Refresh latest episodes before checking
-        run: |
-          # Another queued run may already have published today's episode.
-          git fetch origin main
-          git checkout -B main origin/main
-      - name: Cache date
-        id: day
-        run: echo "today=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
-      - name: Check whether today's episode already exists
+      - name: Diagnose production readiness
         id: existing
         env:
           REPLACE_EXISTING: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_existing }}
           RADIO_DATE: ${{ steps.day.outputs.today }}
         run: |
-          # A reviewed request is consumed only by a successfully published pair.
-          # The latest-main refresh and concurrency group prevent duplicate runs.
-          REQUEST_PENDING=$(python scripts/rebuild_request.py --date "$RADIO_DATE")
-          if [ "$REPLACE_EXISTING" = "true" ] || [ "$REQUEST_PENDING" = "true" ]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Explicit replacement requested; keep published files until new audio passes validation"
-          elif python scripts/verify.py --episode "$RADIO_DATE"; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Valid episode for today already exists; skipping Gemini and TTS"
+          if [ "$REPLACE_EXISTING" = "true" ]; then
+            python scripts/production_readiness.py --date "$RADIO_DATE" --replace-existing
           else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Episode absent or invalid; generating today's episode"
+            python scripts/production_readiness.py --date "$RADIO_DATE"
           fi
-      - name: Validate today's reviewed Work script
-        if: steps.existing.outputs.ready != 'true'
-        env:
-          RADIO_DATE: ${{ steps.day.outputs.today }}
-        run: |
-          if [ ! -f "drafts/$RADIO_DATE/script.json" ] || [ ! -f "drafts/$RADIO_DATE/review.json" ]; then
-            echo "::error::Today's reviewed Work script has not arrived. Existing broadcasts stay published. No paid fallback is run."
-            exit 1
-          fi
-          python scripts/work_script.py --date "$RADIO_DATE"
       - name: Restore MASURADIO stage cache
         if: steps.existing.outputs.ready != 'true'
+        continue-on-error: true
         uses: actions/cache/restore@v4
         with:
           path: .radio-cache
@@ -103,6 +93,7 @@ jobs:
         run: python scripts/verify.py --episode "$RADIO_DATE"
       - name: Save MASURADIO stage cache
         if: always() && steps.existing.outputs.ready == 'false'
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: .radio-cache
