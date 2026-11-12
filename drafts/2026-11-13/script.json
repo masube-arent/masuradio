@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-13",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261113-work-v1",
+  "episode_title": "新モデルの利用条件と通知の再送対策",
+  "chapters": [
+    {
+      "title": "Copilotの新モデル、利用条件と課金を確認",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Gemini 4 Carbon in GitHub Copilot",
+          "url": "https://github.blog/changelog/2026-11-10-gemini-4-carbon-in-github-copilot/",
+          "article_published_date": "2026-11-10",
+          "retrieved_at": "2026-11-12T20:06:43.697066+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Gemini 4 Carbon"
+            },
+            {
+              "id": "e2",
+              "text": "generally available"
+            },
+            {
+              "id": "e3",
+              "text": "Pro+, Max, Business, and Enterprise"
+            },
+            {
+              "id": "e4",
+              "text": "Rollout will be gradual."
+            },
+            {
+              "id": "e5",
+              "text": "provider list pricing"
+            },
+            {
+              "id": "e6",
+              "text": "model policy in Copilot settings"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。GitHubが、Gemini 4 CarbonをCopilotで正式提供しました。対象はCopilot Pro+、Max、Business、Enterpriseです。段階的な展開なので、対象プランでもまだ表示されない場合があります。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "料金は、従量課金のもとでモデル提供元の定価に基づく請求です。定額プランに入っていれば追加利用を無条件に含む、という案内ではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "BusinessとEnterpriseでは、管理者がCopilot設定のモデルポリシーで利用を管理できます。新モデルの既定の有効化では、管理者が全体の既定をオフにするか、そのモデルを明示的に無効化しない限り、自動で有効になります。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E5"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E6"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-10-gemini-4-carbon-in-github-copilot/",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "公開監視の警告、個別リンクで引き継げる",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Public monitoring alerts now have direct links",
+          "url": "https://github.blog/changelog/2026-11-12-public-monitoring-alerts-now-have-direct-links/",
+          "article_published_date": "2026-11-12",
+          "retrieved_at": "2026-11-12T20:06:43.697066+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "a direct link to each alert"
+            },
+            {
+              "id": "e2",
+              "text": "teammates who have access"
+            },
+            {
+              "id": "e3",
+              "text": "GitHub Enterprise Cloud customers"
+            },
+            {
+              "id": "e4",
+              "text": "GitHub Secret Protection or GitHub Advanced Security"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "続いてGitHubの公開監視です。Public monitoringの警告ごとに、直接開けるリンクが追加されました。企業の公開監視画面で警告番号を押すと、個別の警告を開けます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "そのURLはブックマークでき、アクセス権のあるチームメンバーと共有できます。リンクが付いたから誰でも見られる、という変更ではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、GitHub Secret ProtectionかGitHub Advanced Securityを利用しているGitHub Enterprise Cloudの顧客です。その条件のもとで追加料金なしと案内されています。すべてのGitHubアカウントへの無条件提供ではありません。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E4"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-12-public-monitoring-alerts-now-have-direct-links/",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：通知の再送でも作業票を増やさない",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Public monitoring alerts now have direct links",
+          "url": "https://github.blog/changelog/2026-11-12-public-monitoring-alerts-now-have-direct-links/",
+          "article_published_date": "2026-11-12",
+          "retrieved_at": "2026-11-12T20:06:43.697066+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "a direct link to each alert"
+            },
+            {
+              "id": "e2",
+              "text": "teammates who have access"
+            },
+            {
+              "id": "e3",
+              "text": "GitHub Enterprise Cloud customers"
+            },
+            {
+              "id": "e4",
+              "text": "GitHub Secret Protection or GitHub Advanced Security"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。今日は警告を要約する話ではなく、通知が再送されても作業票を増やさない、小さな処理を設計します。同じ入力を繰り返しても結果が増殖しない性質を、冪等性と呼びます。以下はGitHubの通知仕様ではなく、番組が提案する架空の練習です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空の警告通知を繰り返し受けても、作業票を増やさない処理の設計です。ローカルの表だけで試します。IDはあおとみどり、表示名はどちらも設定の確認。あおには朝の未着手と昼の調査中、みどりには朝の未着手を用意します。朝と昼は順序が分かる固定の更新時刻として扱い、実在する警告のURLや値は使いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、架空の警告IDと更新時刻を組み合わせて、受信記録と現在の作業票を分けて作ることです。受信記録のキーはIDと更新時刻の組み合わせ。現在の作業票のキーはIDだけです。表示名をキーにしないのがポイントです。同じ名前でも別IDなら別の票にします。この練習では、同じIDと時刻の通知は同じ内容という前提にします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "最初に、あおの朝、あおの昼、みどりの朝の順で受信させます。次に、あおの昼をもう一度送り、最後にあおの朝を遅れて届けます。紙の表でも、ローカルの短いスクリプトでも構いません。AIを使うなら、利用を認められた環境に、この架空の入力だけを渡して処理案を作ります。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "処理案は、受信記録に同じキーがあれば再処理しない。新しいキーなら記録し、現在の票より更新時刻が新しいときだけ状態を書き換える、という形にします。朝の記録が残っていないケースも別に試し、初めて届いた通知でも古ければ現在の状態を上書きしないか見てください。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、同じ通知の再送で票が増えず、同名でも別IDなら別件として残り、古い更新で状態が巻き戻らないことです。期待する最終結果は、あおが調査中、みどりが未着手です。もう一度入力全体を流しても、票の数も最終状態も同じか比べます。成功ログが出たかだけでなく、表そのものを比べるのが観察点です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "同じIDと時刻なのに内容が異なる入力も、わざと追加してみましょう。その場合は黙って片方を採用せず、食い違いとして止める設計にします。実運用に移すなら、通知元のIDの一意性や時刻の意味を別途確認する必要があります。この練習がそのままGitHubに接続できる実装だとは扱いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、本物の警告や秘密情報の入力、外部通知、本番への書き込み、権限変更、または追加費用が必要になった場合です。今日残すのは、架空入力と処理案、再送前後の比較結果です。自動化は、もう一度来たときの動きまで試しておきたいですね。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空の警告通知を繰り返し受けても、作業票を増やさない処理の設計です。",
+        "action": "操作は、架空の警告IDと更新時刻を組み合わせて、受信記録と現在の作業票を分けて作ることです。",
+        "check": "確認は、同じ通知の再送で票が増えず、同名でも別IDなら別件として残り、古い更新で状態が巻き戻らないことです。",
+        "stop": "中止条件は、本物の警告や秘密情報の入力、外部通知、本番への書き込み、権限変更、または追加費用が必要になった場合です。"
+      }
+    }
+  ]
+}
