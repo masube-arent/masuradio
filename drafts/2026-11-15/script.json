@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-15",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261115-work-v1",
+  "episode_title": "モデル提供終了に備える互換性チェック",
+  "chapters": [
+    {
+      "title": "Copilotの一部モデル、提供終了と例外を確認",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Upcoming deprecation of selected GitHub Copilot models in December",
+          "url": "https://github.blog/changelog/2026-11-13-upcoming-deprecation-of-selected-github-copilot-models-in-december/",
+          "article_published_date": "2026-11-13",
+          "retrieved_at": "2026-11-14T20:07:39.439510+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "December 14, 2026"
+            },
+            {
+              "id": "e2",
+              "text": "Claude Haiku 4.5"
+            },
+            {
+              "id": "e3",
+              "text": "individual GitHub Copilot subscribers on annual plans"
+            },
+            {
+              "id": "e4",
+              "text": "the global default"
+            },
+            {
+              "id": "e5",
+              "text": "explicitly disabled the model"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。GitHubがCopilotの一部モデルの提供終了を予告しました。予定日は2026年十二月14日。Copilot Chat、インライン編集、askとagentのモード、コード補完を含む、Copilot全体が対象です。今日すでに全モデルが終了した、という案内ではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "ただし、対象モデルの一つ、Claude Haiku 4.5には例外があります。年間プランの個人Copilot契約者は引き続き利用でき、この提供終了の対象外です。同じモデル名でも契約条件によって扱いが違います。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "BusinessとEnterpriseでは、推奨代替モデルは既定の有効化の仕組みで自動的に有効になります。ただし、管理者が全体の既定をオフにした場合や、そのモデルを明示的に無効化した場合は別です。全体の既定をオフにしている場合は、Copilot設定のモデルポリシーで代替モデルへのアクセスを有効にできます。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E4"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E5"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-13-upcoming-deprecation-of-selected-github-copilot-models-in-december/",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：モデル移行前の出力互換テスト",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Upcoming deprecation of selected GitHub Copilot models in December",
+          "url": "https://github.blog/changelog/2026-11-13-upcoming-deprecation-of-selected-github-copilot-models-in-december/",
+          "article_published_date": "2026-11-13",
+          "retrieved_at": "2026-11-14T20:07:39.439510+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "December 14, 2026"
+            },
+            {
+              "id": "e2",
+              "text": "Claude Haiku 4.5"
+            },
+            {
+              "id": "e3",
+              "text": "individual GitHub Copilot subscribers on annual plans"
+            },
+            {
+              "id": "e4",
+              "text": "the global default"
+            },
+            {
+              "id": "e5",
+              "text": "explicitly disabled the model"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。モデルを切り替える前に、回答がきれいかどうかだけでなく、後ろの処理で使えるかを確かめる練習です。以下のモデル名や結果はすべて架空で、実在モデルの性能比較ではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空のAIモデルを入れ替える前に、出力の互換性を確認するテスト表です。題材は、架空のお問い合わせを分類する処理です。入力は、ログインできません、と、画面について質問です、という短いダミー文。実在の問い合わせや個人情報は使いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、同じ架空入力と合格条件を固定し、新旧の出力例を並べることです。返す項目を分類、根拠、不足情報に固定します。分類の候補は、ログイン、画面、判断保留。ログインできない理由が書かれていないのに、パスワード間違いと断定したら不合格、という基準も先に書きます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "次に、新旧という名前だけ付けた出力例を手で作ります。旧の例は項目がそろい、原因は未確認。新の例は読みやすいけれど不足情報の項目がない、という形です。優劣を想像するためではなく、判定表が欠落を見つけられるか試すためのダミーです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、文章の自然さではなく、必要な項目と禁止事項を新旧で同じ基準で判定できることです。項目がすべてあるか、分類が候補内か、根拠が入力にあるかを別々に判定します。合格、不合格、未確認を分け、文章が流暢だから欠けた項目も合格、とはしないルールにしましょう。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "利用を認められたAI環境があれば、ダミー文と判定基準だけを渡して、見落としやすい追加テストの案を出してもらえます。その案も人が確認し、期待結果を先に決めてから比較表へ加えます。モデルを実際に呼ばず、表だけで進めても構いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "最後に、入力が曖昧なときに判断保留を返せる例も追加します。ログインの分類ができることと、原因を特定できることは別なので、原因は未確認のままでも分類だけは合格にできます。項目ごとの判定を残すと、何が合わないのかを具体的に説明できます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、実データの入力、外部への送信、本番モデルの切り替え、権限変更、または追加費用が必要になった場合です。成果物は、架空入力、固定した合格条件、新旧のダミー出力と判定表です。実際の移行可否は、この練習だけでは決めません。モデル交代にも、引き継ぎチェックリストを。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空のAIモデルを入れ替える前に、出力の互換性を確認するテスト表です。",
+        "action": "操作は、同じ架空入力と合格条件を固定し、新旧の出力例を並べることです。",
+        "check": "確認は、文章の自然さではなく、必要な項目と禁止事項を新旧で同じ基準で判定できることです。",
+        "stop": "中止条件は、実データの入力、外部への送信、本番モデルの切り替え、権限変更、または追加費用が必要になった場合です。"
+      }
+    }
+  ]
+}
