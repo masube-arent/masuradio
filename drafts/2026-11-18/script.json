@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-18",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261118-work-v1",
+  "episode_title": "AIの変更を確かめる評価と比較の条件",
+  "chapters": [
+    {
+      "title": "Copilot Evalsで変更前後を確かめる",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "GitHub Copilot Evals is now in public preview",
+          "url": "https://github.blog/changelog/2026-11-17-github-copilot-evals-is-now-in-public-preview/",
+          "article_published_date": "2026-11-17",
+          "retrieved_at": "2026-11-17T20:45:25.849705+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "repeatable test for AI behavior"
+            },
+            {
+              "id": "e2",
+              "text": "You approve each run before it starts."
+            },
+            {
+              "id": "e3",
+              "text": "Copilot Individual, Copilot Business, and Copilot Enterprise plans."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。今日は、AIを変えたあと、良くなったと言える根拠をどう持つかがテーマです。GitHubは十一月十七日、Copilot Evalsのパブリックプレビューを発表しました。実際に近い課題と、望ましい結果を用意し、答えだけでなく、そこへ至った動きも確かめる仕組みです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "スキルやカスタムエージェント、MCPツール向けの評価を作り、チェックの合否を見たり、設定変更の前後を比べたりできます。実行は毎回、開始前に利用者が承認します。一度うまく答えたことだけで判断せず、同じ評価を繰り返して変更の影響を見る、という説明です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象として案内されているのは、Copilot Individual、Copilot Business、Copilot Enterpriseの各プランです。正式提供ではなく、パブリックプレビューとしての案内です。今日のニュースでは、この機能を誰でも無条件に使える、あるいは無料で使えるとは紹介しません。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-17-github-copilot-evals-is-now-in-public-preview/",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "同じモデルで実行基盤を比べる",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "GitHub Copilot benchmarks site adds harness comparisons",
+          "url": "https://github.blog/changelog/2026-11-17-github-copilot-benchmarks-site-adds-harness-comparisons/",
+          "article_published_date": "2026-11-17",
+          "retrieved_at": "2026-11-17T20:45:25.849705+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "both available in public preview"
+            },
+            {
+              "id": "e2",
+              "text": "same model at the same reasoning effort"
+            },
+            {
+              "id": "e3",
+              "text": "Only exact model pairs at medium reasoning effort are shown."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "もう一つは、GitHubのベンチマークサイトです。こちらにもパブリックプレビューの比較画面が加わりました。新しいHarnesses画面では、Copilot CLI、Claude Code、Codex CLIを、同じモデル、同じ推論の強さで比較します。モデル名だけでなく、それを動かす仕組みの違いを見るための比較です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "ただし、表示されるのは推論の強さがmediumで、モデルが正確に一致する組み合わせだけです。Copilotだけの構成であるFusionや、対応する相手がない結果は除外されます。別のモデルの結果を混ぜて、全製品の順位表を作る画面ではありません。解決率とタスク当たりの平均費用を並べ、公開された実行結果のばらつきも示しています。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E3"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-17-github-copilot-benchmarks-site-adds-harness-comparisons/",
+          "segment_indices": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：指示文を変える前に採点表を作る",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "GitHub Copilot Evals is now in public preview",
+          "url": "https://github.blog/changelog/2026-11-17-github-copilot-evals-is-now-in-public-preview/",
+          "article_published_date": "2026-11-17",
+          "retrieved_at": "2026-11-17T20:45:25.849705+00:00",
+          "evidence_status": "body",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "in public preview"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。今日はツールを導入せず、評価の設計図だけをローカルのメモに作ります。AIへ入力する前に、何ができれば合格かを人が決めておく練習です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空の依頼文から、担当と期限を抜き出す指示文の比較です。例えば、架空の依頼を、担当は青空さん。期限はまだ決めていません、と書きます。正解は担当が青空さん、期限は未定です。今日や明日の日付を補った回答は不合格、と先に決めます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、正解と不正解の例を先に書き、変更前後の指示文を同じ入力で比べることです。比較するのは、担当と期限を抜き出して、という元の指示と、書かれていない値は未定にし、根拠の文も添えて、という変更案です。今回はAIを実行せず、この違いが表れる回答例を手で並べるだけでも構いません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "次に、架空の文を足します。最初は青空さんに依頼しましたが、担当は夕凪さんに変更しました、という例です。最新の担当だけを答えるか、変更前後を区別して説明するか、期待する出力を明記しましょう。両方の名前を無条件に現担当として並べる回答は、合格にしない案です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、空欄を勝手に補わず、根拠となる原文の位置を示せることです。評価表には入力、期待する答え、してはいけないこと、実際の答え、判定理由を並べます。まだ実行していない欄は未実施と書きます。見栄えが良いことと、事実が合っていることを別に判定します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "ここで大切なのは、変更案に都合の良い例だけを残さないことです。担当も期限も明記された通常の例を残し、片方だけ欠けた例、途中で担当が変わる例と一緒に扱う提案です。不合格が出たら、期待する答えのほうを後から変えて帳尻を合わせず、指示の修正理由を記録します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、実在の業務情報、外部送信、新しい権限、または追加費用が必要になる場合です。今日は架空の文と採点基準だけで終えます。新機能を試す前にも、何を改善したいのかは具体化できます。良かった印象ではなく、どの条件を満たしたかを説明する。その準備から始めましょう。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空の依頼文から、担当と期限を抜き出す指示文の比較です。",
+        "action": "操作は、正解と不正解の例を先に書き、変更前後の指示文を同じ入力で比べることです。",
+        "check": "確認は、空欄を勝手に補わず、根拠となる原文の位置を示せることです。",
+        "stop": "中止条件は、実在の業務情報、外部送信、新しい権限、または追加費用が必要になる場合です。"
+      }
+    }
+  ]
+}
