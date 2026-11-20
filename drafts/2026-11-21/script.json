@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-21",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261121-work-v1",
+  "episode_title": "AIの完了報告を、差分とテストから確かめる",
+  "chapters": [
+    {
+      "title": "Codex CLIで子エージェントの作業記録を見比べる",
+      "role": "report",
+      "sources": [
+        {
+          "source": "OpenAI",
+          "title": "ChatGPT & Codex changelog",
+          "url": "https://learn.chatgpt.com/docs/changelog",
+          "article_published_date": "2026-11-20",
+          "retrieved_at": "2026-11-20T20:07:11+00:00",
+          "evidence_status": "body",
+          "section_heading": "Codex CLI 0.171.0",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Codex CLI 0.171.0"
+            },
+            {
+              "id": "e2",
+              "text": "Enabled the TUI workspace by default"
+            },
+            {
+              "id": "e3",
+              "text": "searchable document previews, image previews, and subagent transcripts alongside the main conversation"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、NANAです。今日は、AIの「終わりました」を、どこまで信じてよいか確かめる話です。OpenAIは十一月二十日付の変更履歴で、Codex CLI 0.171.0を案内しています。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "この版では、TUIのワークスペースが既定で有効になりました。TUIは、端末の中で使う画面です。今回取り上げるのは、メインの会話と並べて、子エージェントの作業記録を見られる機能です。親の完了報告とは別に、子の記録を確認する場所があるわけです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "同じ変更履歴には、検索できる文書のプレビューと、画像のプレビューも挙がっています。検索できると明記されているのは文書のプレビューです。子エージェントの記録まで同じ検索機能で探せる、という意味では紹介しません。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://learn.chatgpt.com/docs/changelog",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：完了報告一件の根拠を逆引きする",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "OpenAI",
+          "title": "ChatGPT & Codex changelog",
+          "url": "https://learn.chatgpt.com/docs/changelog",
+          "article_published_date": "2026-11-20",
+          "retrieved_at": "2026-11-20T20:07:11+00:00",
+          "evidence_status": "body",
+          "section_heading": "Codex CLI 0.171.0",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Codex CLI 0.171.0"
+            },
+            {
+              "id": "e2",
+              "text": "Enabled the TUI workspace by default"
+            },
+            {
+              "id": "e3",
+              "text": "searchable document previews, image previews, and subagent transcripts alongside the main conversation"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。今日のDXハックは、完了報告から根拠へ戻れるようにする短いレビューです。すでに閲覧できる練習用の記録だけを使い、新たな自動処理は動かしません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空の小さな変更についての、非機密の完了報告一件です。 例は「日付が空欄のとき、空欄のまま表示するよう直しました。テストも通りました」。記録がないときは、親の報告と子のメモを架空の文で作り、二つ並べるだけで練習できます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "操作は、完了報告の一文を、差分、テスト結果、未検証の三つに分けて逆引きすることです。 まず、親側の報告と子側の作業記録を見比べます。変更については、日付の空欄を扱う差分があるかを見ます。ファイル名だけでは変更の中身は分からないので、見える差分の範囲で判断します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認は、実行した記録と、最後まで通った記録を分けることです。 例えば子の記録に「日付ラベルの単体テストを実行、成功」とあれば、確認できたのはその単体テストです。画面全体の確認が記録にないなら、テスト名と結果を残し、画面確認は「未検証」と書きます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "成果物は、「日付の空欄処理を変更／該当の単体テストは成功／画面表示は未検証」のような一文です。別の担当者が後で根拠をたどれるよう、差分のファイル名とテスト名を添えます。子の記録と差分が食い違うなら、完了判定を保留します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "中止条件は、機密情報や本番アクセス、権限追加、外部送信が必要になったときです。 記録が開けない場合も、推測で穴を埋めず「確認できず」で止めます。完了報告を長くするより、どこまで確かめたかを一行で残してみてください。NANAがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空の小さな変更についての、非機密の完了報告一件です。",
+        "action": "操作は、完了報告の一文を、差分、テスト結果、未検証の三つに分けて逆引きすることです。",
+        "check": "確認は、実行した記録と、最後まで通った記録を分けることです。",
+        "stop": "中止条件は、機密情報や本番アクセス、権限追加、外部送信が必要になったときです。"
+      }
+    }
+  ]
+}
