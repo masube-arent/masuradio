@@ -2,6 +2,9 @@ name: Publish MASURADIO
 on:
   push:
     branches: [main]
+    # Draft-only pushes trigger Daily; publish after it finishes, not before.
+    paths-ignore:
+      - 'drafts/**'
   workflow_dispatch:
   workflow_run:
     workflows: [Daily MASURADIO]
@@ -30,9 +33,30 @@ jobs:
       - name: Validate archive before publishing
         run: python scripts/verify.py --archive
       - run: mkdir -p public && cp site/index.html public/index.html && cp site/playback_state.js public/playback_state.js && cp -r episodes public/episodes
-      - uses: actions/upload-pages-artifact@v3
+      - id: upload
+        uses: actions/upload-pages-artifact@v3
         with:
           path: public
+      - name: Wait for uploaded Pages artifact metadata
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+        run: |
+          if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::warning::Pages upload did not return an artifact ID; continuing with the standard deployment check."
+            exit 0
+          fi
+          # This repository is public, so the metadata lookup needs no token.
+          url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages"
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --connect-timeout 3 --max-time 5 "$url" |
+              jq -e --arg id "$ARTIFACT_ID" 'any(.artifacts[]; .name == "github-pages" and (.id | tostring) == $id and .expired == false)' >/dev/null; then
+              echo "Pages artifact $ARTIFACT_ID is visible for run $GITHUB_RUN_ID."
+              exit 0
+            fi
+            echo "Pages artifact metadata not ready ($attempt/6)."
+            if [[ "$attempt" != 6 ]]; then sleep 2; fi
+          done
+          echo "::warning::Pages artifact has not appeared in the public metadata API; continuing with the standard deployment check."
       - id: deployment
         uses: actions/deploy-pages@v4
       - name: Verify live archive matches this deployment
