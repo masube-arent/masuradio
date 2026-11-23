@@ -24,6 +24,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # A job rerun can leave earlier artifacts in the same workflow run.
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,20 +39,21 @@ jobs:
       - id: upload
         uses: actions/upload-pages-artifact@v3
         with:
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: public
       - name: Wait for uploaded Pages artifact metadata
         env:
           ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
         run: |
           if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
-            echo "::warning::Pages upload did not return an artifact ID; continuing with the standard deployment check."
-            exit 0
+            echo "::error::Pages upload did not return a numeric artifact ID."
+            exit 1
           fi
-          # This repository is public, so the metadata lookup needs no token.
-          url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages"
+          # This public REST lookup is diagnostic; deploy-pages uses the Actions artifact service.
+          url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$PAGES_ARTIFACT_NAME"
           for attempt in 1 2 3 4 5 6; do
             if curl --fail --silent --show-error --connect-timeout 3 --max-time 5 "$url" |
-              jq -e --arg id "$ARTIFACT_ID" 'any(.artifacts[]; .name == "github-pages" and (.id | tostring) == $id and .expired == false)' >/dev/null; then
+              jq -e --arg id "$ARTIFACT_ID" --arg name "$PAGES_ARTIFACT_NAME" 'any(.artifacts[]; .name == $name and (.id | tostring) == $id and .expired == false)' >/dev/null; then
               echo "Pages artifact $ARTIFACT_ID is visible for run $GITHUB_RUN_ID."
               exit 0
             fi
@@ -57,8 +61,29 @@ jobs:
             if [[ "$attempt" != 6 ]]; then sleep 2; fi
           done
           echo "::warning::Pages artifact has not appeared in the public metadata API; continuing with the standard deployment check."
+      # No github-token: lookup stays within this run on the Actions artifact service.
+      - name: Check the current Pages artifact is visible to Actions
+        id: artifact_probe
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        timeout-minutes: 1
+        with:
+          artifact-ids: ${{ steps.upload.outputs.artifact_id }}
+          path: ${{ runner.temp }}/pages-artifact-check
+      - name: Wait before rechecking the Pages artifact
+        if: steps.artifact_probe.outcome == 'failure'
+        run: sleep 4
+      - name: Recheck the current Pages artifact before deploying
+        if: steps.artifact_probe.outcome == 'failure'
+        uses: actions/download-artifact@v4
+        timeout-minutes: 1
+        with:
+          artifact-ids: ${{ steps.upload.outputs.artifact_id }}
+          path: ${{ runner.temp }}/pages-artifact-recheck
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
       - name: Verify live archive matches this deployment
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
