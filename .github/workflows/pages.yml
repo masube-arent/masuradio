@@ -24,6 +24,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      # A job rerun can leave earlier artifacts in the same workflow run.
+      PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,6 +39,7 @@ jobs:
       - id: upload
         uses: actions/upload-pages-artifact@v3
         with:
+          name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: public
       - name: Wait for uploaded Pages artifact metadata
         env:
@@ -45,11 +49,11 @@ jobs:
             echo "::warning::Pages upload did not return an artifact ID; continuing with the standard deployment check."
             exit 0
           fi
-          # This repository is public, so the metadata lookup needs no token.
-          url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages"
+          # This public REST lookup is diagnostic; deploy-pages uses the Actions artifact service.
+          url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$PAGES_ARTIFACT_NAME"
           for attempt in 1 2 3 4 5 6; do
             if curl --fail --silent --show-error --connect-timeout 3 --max-time 5 "$url" |
-              jq -e --arg id "$ARTIFACT_ID" 'any(.artifacts[]; .name == "github-pages" and (.id | tostring) == $id and .expired == false)' >/dev/null; then
+              jq -e --arg id "$ARTIFACT_ID" --arg name "$PAGES_ARTIFACT_NAME" 'any(.artifacts[]; .name == $name and (.id | tostring) == $id and .expired == false)' >/dev/null; then
               echo "Pages artifact $ARTIFACT_ID is visible for run $GITHUB_RUN_ID."
               exit 0
             fi
@@ -59,6 +63,8 @@ jobs:
           echo "::warning::Pages artifact has not appeared in the public metadata API; continuing with the standard deployment check."
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
       - name: Verify live archive matches this deployment
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
