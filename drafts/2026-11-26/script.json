@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-26",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261126-work-v1",
+  "episode_title": "古いアプリ、作り直す前に残す動作を一つ決める",
+  "chapters": [
+    {
+      "title": "旧版が動くとき、動かないときの改修手順",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "How to choose the next safe step in application modernization",
+          "url": "https://github.blog/ai-and-ml/github-copilot/how-to-choose-the-next-safe-step-in-application-modernization/",
+          "article_published_date": "2026-11-25",
+          "retrieved_at": "2026-11-25T20:43:01.600360+00:00",
+          "evidence_status": "body",
+          "section_heading": "Decide what proof is possible",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Capture behavior, then upgrade."
+            },
+            {
+              "id": "e2",
+              "text": "Build a small modern slice first."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、ナナです。古いアプリを直すとき、何から変えるかより先に、今の動きを証拠に残せるかを考えます。十一月二十五日のギットハブ公式ブログは、まだ無理なく動かせるなら、外から見える動作を記録してから更新し、その記録で更新後を確かめる方法を紹介しています。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "反対に、先に手を入れないと動かない場合は、動く環境で小さな業務の流れを一つだけ作り、確かめてから広げる方法です。古い環境のテストが使えないのに、最初からテスト一式の復旧を条件にしない、という考え方です。これは記事で紹介された進め方で、製品の新機能の発表ではありません。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/ai-and-ml/github-copilot/how-to-choose-the-next-safe-step-in-application-modernization/",
+          "segment_indices": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：架空の備品返却を一件だけ確かめる",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "How to choose the next safe step in application modernization",
+          "url": "https://github.blog/ai-and-ml/github-copilot/how-to-choose-the-next-safe-step-in-application-modernization/",
+          "article_published_date": "2026-11-25",
+          "retrieved_at": "2026-11-25T20:43:01.600360+00:00",
+          "evidence_status": "body",
+          "section_heading": "Decide what proof is possible",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "Capture behavior, then upgrade."
+            },
+            {
+              "id": "e2",
+              "text": "Build a small modern slice first."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。次の改修を、画面の刷新ではなく、確認できる動作一つから始める案です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、架空の備品アプリで、借りた備品を返す操作です。全部作り直すかではなく、この操作を次に残すために、何が確かめられるかを決めます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "まず十五分と区切って、手元の架空データで、返却一件を確認する計画を書きます。借りている状態から返却済みに変わり、在庫が一個戻る。この入力と結果を、更新前に残したい記録にします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "二重に押された場合はどうなるかも書き添えます。在庫は一個だけ戻る、と仮の期待結果を書けますが、古い版で調べるまでは、今もそう動くとは言いません。期待している動作と、実際に見えた動作を、同じ欄に入れないのがポイントです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認では、記録を「旧版で実測」と「仕様からの仮置き」に分けます。旧版で動けば、同じ入力を新版に当てて結果を比較します。旧版が動かなければ、返却一件だけを先に作って確認し、旧版との一致は未確認のままにします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "十五分で旧版が動かないときは、調査をいったん止めます。本番データや新しい権限が要るなら、試さず担当者に確認します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "チームへの持ち帰りは三行で十分です。残す動作、確かめられた事実、次の実験。この三つが書ければ、全面刷新か現状維持かの二択から抜け出せます。ナナがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、架空の備品アプリで、借りた備品を返す操作です。全部作り直すかではなく、この操作を次に残すために、何が確かめられるかを決めます。",
+        "action": "まず十五分と区切って、手元の架空データで、返却一件を確認する計画を書きます。借りている状態から返却済みに変わり、在庫が一個戻る。この入力と結果を、更新前に残したい記録にします。",
+        "check": "確認では、記録を「旧版で実測」と「仕様からの仮置き」に分けます。旧版で動けば、同じ入力を新版に当てて結果を比較します。旧版が動かなければ、返却一件だけを先に作って確認し、旧版との一致は未確認のままにします。",
+        "stop": "十五分で旧版が動かないときは、調査をいったん止めます。本番データや新しい権限が要るなら、試さず担当者に確認します。"
+      }
+    }
+  ]
+}
