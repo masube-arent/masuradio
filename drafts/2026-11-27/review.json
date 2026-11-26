@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "script_sha256": "bdf614777f3029c98f701b4c729f15ee06cd98066656df692d59012ba601335c",
+  "reviewed_at": "2026-11-26T20:39:03.505Z",
+  "reviewer": "independent-work-review",
+  "decision": "approved",
+  "checks": [
+    "dx_target_action_check_stop_present",
+    "every_spoken_claim_checked",
+    "facts_and_proposals_separated",
+    "no_long_source_copying",
+    "numeric_and_product_scope_checked",
+    "primary_sources_opened",
+    "public_information_only"
+  ],
+  "issues": []
+}
