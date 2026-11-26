@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-27",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261127-work-v1",
+  "episode_title": "同じ「メンバー」表示でも、レビューの請求先は変わる",
+  "chapters": [
+    {
+      "title": "コパイロットのレビュー請求、未設定だけが変わる",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Copilot code review billing will default to the organization",
+          "url": "https://github.blog/changelog/2026-11-25-copilot-code-review-billing-will-default-to-the-organization/",
+          "article_published_date": "2026-11-25",
+          "retrieved_at": "2026-11-26T20:38:22.992Z",
+          "evidence_status": "body",
+          "section_heading": "What’s changing",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "billed to the organization that owns the repository"
+            },
+            {
+              "id": "e2",
+              "text": "your choice stays in effect"
+            },
+            {
+              "id": "e3",
+              "text": "will be set to Member instead."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、ナナです。今日は、ギットハブ・コパイロットのコードレビューで、誰の利用枠を使うかという話です。十一月二十五日の公式発表によると、対象はコパイロットのビジネスかエンタープライズ。ライセンスを持つメンバーのレビューで、請求先をまだ選んでいない場合、十二月三十日から、原則としてリポジトリを持つ組織に請求されます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "すでにメンバーか組織を明示的に選んでいる場合、その選択は変わりません。ライセンスがないメンバー向けの別設定も、そのままです。いまは未設定でも、画面には「デフォルト、メンバー」と表示されます。明示的にメンバーを選んだ場合と、いまの表示は似ていますが、変更後の扱いが違います。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "例外もあります。エーアイ・クレジットの有料利用が無効、請求にロックがある、または請求先となる顧客情報がない場合は、メンバー側になります。エンタープライズでこの設定を管理している場合、選択するのはエンタープライズのオーナーです。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-25-copilot-code-review-billing-will-default-to-the-organization/",
+          "segment_indices": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：二つの架空チームで請求先を確かめる",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Copilot code review billing will default to the organization",
+          "url": "https://github.blog/changelog/2026-11-25-copilot-code-review-billing-will-default-to-the-organization/",
+          "article_published_date": "2026-11-25",
+          "retrieved_at": "2026-11-26T20:38:22.992Z",
+          "evidence_status": "body",
+          "section_heading": "What’s changing",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "billed to the organization that owns the repository"
+            },
+            {
+              "id": "e2",
+              "text": "your choice stays in effect"
+            },
+            {
+              "id": "e3",
+              "text": "will be set to Member instead."
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。設定は触らず、変更後の請求先を、架空の二例で説明できるか確かめます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象は、同じコパイロットのビジネスを使う架空の二組織です。どちらもライセンスあり、有料利用が有効で、請求にロックはなく、請求先も登録済みとします。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "紙に、組織の名前、今の設定、十二月三十日以降の請求先の、三列を作ります。青チームは未設定で表示がデフォルト、メンバー。緑チームはメンバーを明示的に選択済み。二つとも今はメンバー枠ですが、意味は同じではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "答え合わせです。青は、対象のリポジトリを持つ組織。緑は、メンバーの利用枠のまま。続けて、青の条件を一つだけ変え、有料利用が無効なら、メンバー側になることも確認します。実際の設定が分からないなら、想像で空欄を埋めず、未確認と書いておきます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "設定を見られない場合や、有料利用の有効化が必要な場合はそこで停止。管理者に、現在の選択と請求先だけ確認します。実際のレビューを走らせたり、課金設定を変えたりはしません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "最初に見るのは、画面のメンバーという文字だけではなく、自分たちが選んだ設定なのかどうか。ナナがお届けしました。"
+        }
+      ],
+      "claims": [],
+      "story_points": [],
+      "practice": {
+        "target": "対象は、同じコパイロットのビジネスを使う架空の二組織です。どちらもライセンスあり、有料利用が有効で、請求にロックはなく、請求先も登録済みとします。",
+        "action": "紙に、組織の名前、今の設定、十二月三十日以降の請求先の、三列を作ります。青チームは未設定で表示がデフォルト、メンバー。緑チームはメンバーを明示的に選択済み。二つとも今はメンバー枠ですが、意味は同じではありません。",
+        "check": "答え合わせです。青は、対象のリポジトリを持つ組織。緑は、メンバーの利用枠のまま。続けて、青の条件を一つだけ変え、有料利用が無効なら、メンバー側になることも確認します。実際の設定が分からないなら、想像で空欄を埋めず、未確認と書いておきます。",
+        "stop": "設定を見られない場合や、有料利用の有効化が必要な場合はそこで停止。管理者に、現在の選択と請求先だけ確認します。実際のレビューを走らせたり、課金設定を変えたりはしません。"
+      }
+    }
+  ]
+}
