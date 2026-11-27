@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-28",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261128-work-v1",
+  "episode_title": "テストは緑。でもカバレッジが空欄なら？",
+  "chapters": [
+    {
+      "title": "カバレッジ報告の形式違いが見えるように",
+      "role": "report",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Code coverage uploads now flag invalid report formats",
+          "url": "https://github.blog/changelog/2026-11-23-code-coverage-uploads-now-flag-invalid-report-formats/",
+          "article_published_date": "2026-11-23",
+          "retrieved_at": "2026-11-27T20:21:36.947Z",
+          "evidence_status": "body",
+          "section_heading": "Code coverage uploads now flag invalid report formats",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "the upload step fails"
+            },
+            {
+              "id": "e2",
+              "text": "these uploads appeared to succeed"
+            },
+            {
+              "id": "e3",
+              "text": "we skip individual lines"
+            },
+            {
+              "id": "e4",
+              "text": "including GitHub Enterprise Cloud with data residency"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、ナナです。AIにテストを作ってもらって、実行結果は成功。でも、変更したコードのどこをテストが通ったか、その報告は本当に届いていますか。十一月二十三日、GitHubは、コードクオリティのカバレッジアップロードが、コベルチュラ形式のXMLかどうかを確認するようになったと発表しました。形式が合わなければ、アップロードのステップが失敗し、アクションズのログに理由が出ます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "以前は、形式が違ってもアップロードは成功したように見え、プルリクエストにカバレッジが出ないことがありました。今回のエラーが出たときは、テストツールの出力をコベルチュラ形式にするか、アップロード前に変換するよう案内されています。テストそのものが失敗したという意味ではありません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "逆に、コベルチュラ形式の報告は、軽微な構造の問題があっても処理されるようになりました。使える行番号や実行回数がない行は飛ばし、報告全体は捨てません。つまり、アップロードが通っても、すべての行が集計に入ったという保証にはなりません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "対象のリポジトリで、GitHubコードクオリティを有効にしていることが前提です。変更はGitHubチームと、データレジデンシー対応を含むGitHubエンタープライズクラウドで利用できます。GitHubエンタープライズサーバーは、今回の対象外です。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E4"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://github.blog/changelog/2026-11-23-code-coverage-uploads-now-flag-invalid-report-formats/",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：成功・提出・表示を別々に確認",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "GitHub",
+          "title": "Code coverage uploads now flag invalid report formats",
+          "url": "https://github.blog/changelog/2026-11-23-code-coverage-uploads-now-flag-invalid-report-formats/",
+          "article_published_date": "2026-11-23",
+          "retrieved_at": "2026-11-27T20:21:36.947Z",
+          "evidence_status": "body",
+          "section_heading": "Code coverage uploads now flag invalid report formats",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "the upload step fails"
+            },
+            {
+              "id": "e2",
+              "text": "these uploads appeared to succeed"
+            },
+            {
+              "id": "e3",
+              "text": "we skip individual lines"
+            },
+            {
+              "id": "e4",
+              "text": "including GitHub Enterprise Cloud with data residency"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。今日は、テストと報告の確認を分ける練習をしましょう。実際のリポジトリや設定には触りません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "題材は、架空の計算ライブラリ。人工のテスト結果とカバレッジ報告だけを使います。AIにテストを追加してもらった直後、レビュー担当が、その報告を根拠にしてよいか確認する場面です。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "確認欄を三つに分けます。テストは成功したか。カバレッジ報告の形式は合っていて、アップロードは成功したか。最後に、対象の変更に対応する数字を、プルリクエスト上で実際に確認できたか。AIにはこの三つを別々に報告してもらいます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "一例目は、テストはすべて成功。でも報告はJSONです。今回のアップロードでは、提出欄は失敗、画面の数字は未確認。二例目は、コベルチュラ形式で提出できたけれど、画面に数字が出ていません。この場合、提出だけ成功で、数字は未確認です。どちらも、数字をゼロと書かないのがポイントです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "失敗や未確認が一つでもあったら、カバレッジを根拠にした判断は保留します。形式の問題なら出力設定を直します。提出後に数字が見えないなら、結果がどの変更にひも付くかを確認します。原因が分からないまま、チェックを外したり、前回の数字で代用したりしません。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "テストが緑なのは、いい知らせ。でも、見えない数字まで確認済みにしない。今日のナナからは、以上です。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E1"
+        }
+      ],
+      "story_points": [],
+      "practice": {
+        "target": "題材は、架空の計算ライブラリ。人工のテスト結果とカバレッジ報告だけを使います。AIにテストを追加してもらった直後、レビュー担当が、その報告を根拠にしてよいか確認する場面です。",
+        "action": "確認欄を三つに分けます。テストは成功したか。カバレッジ報告の形式は合っていて、アップロードは成功したか。最後に、対象の変更に対応する数字を、プルリクエスト上で実際に確認できたか。AIにはこの三つを別々に報告してもらいます。",
+        "check": "一例目は、テストはすべて成功。でも報告はJSONです。今回のアップロードでは、提出欄は失敗、画面の数字は未確認。二例目は、コベルチュラ形式で提出できたけれど、画面に数字が出ていません。この場合、提出だけ成功で、数字は未確認です。どちらも、数字をゼロと書かないのがポイントです。",
+        "stop": "失敗や未確認が一つでもあったら、カバレッジを根拠にした判断は保留します。形式の問題なら出力設定を直します。提出後に数字が見えないなら、結果がどの変更にひも付くかを確認します。原因が分からないまま、チェックを外したり、前回の数字で代用したりしません。"
+      }
+    }
+  ]
+}
