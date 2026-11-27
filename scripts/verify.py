@@ -42,11 +42,17 @@ def check_episode(day, base=EP, probe=False):
 def check_archive(base=EP):
     path = base / 'index.json'
     items = json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(items, list) or not 1 <= len(items) <= 7:
-        raise ValueError('Archive must contain 1-7 episodes')
+    if not isinstance(items, list) or not items:
+        raise ValueError('Archive must contain at least one episode')
     dates = [e['date'] for e in items]
     if dates != sorted(set(dates), reverse=True):
         raise ValueError('Archive dates must be unique and newest first')
+    mp3_dates = {p.stem for p in base.glob('????-??-??.mp3')}
+    json_dates = {p.stem for p in base.glob('????-??-??.json')}
+    if mp3_dates != json_dates:
+        raise RuntimeError(f'Archive has incomplete episode pairs: {sorted(mp3_dates ^ json_dates)}')
+    if set(dates) != mp3_dates:
+        raise ValueError('Archive index must cover all episode pairs')
     for item in items:
         meta = check_episode(item['date'], base=base)
         for key in ('title', 'audio', 'duration_seconds'):

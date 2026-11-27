@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from editorial_fixtures import draft, response, report_draft, SOURCE
 """Offline reliability tests: no Gemini key, Edge TTS, or network needed."""
 import json
@@ -90,6 +92,27 @@ class EpisodeVerificationTests(unittest.TestCase):
             (root / 'index.json').write_text(json.dumps([d]), encoding='utf-8')
             self.assertEqual(verify.check_episode('2026-11-01', base=root), d)
             verify.check_archive(base=root)
+
+    def test_archive_indexes_all_episodes_and_rejects_truncation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            base = root / 'episodes'
+            base.mkdir()
+            (root / 'scripts').mkdir()
+            source = Path(__file__).resolve().parents[1] / 'scripts/build_index.py'
+            builder = root / 'scripts/build_index.py'
+            builder.write_bytes(source.read_bytes())
+            days = [f'2026-11-{i:02d}' for i in range(10, 19)]
+            for day in days:
+                self.make_episode(base, day)
+            subprocess.run([sys.executable, str(builder)], check=True)
+            index = base / 'index.json'
+            entries = json.loads(index.read_text())
+            self.assertEqual([entry['date'] for entry in entries], days[::-1])
+            verify.check_archive(base=base)
+            index.write_text(json.dumps(entries[:7]))
+            with self.assertRaisesRegex(ValueError, 'all episode pairs'):
+                verify.check_archive(base=base)
 
     def test_missing_audio_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

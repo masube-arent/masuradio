@@ -71,9 +71,6 @@ def publish(root, day, replace_existing=False):
         if request:
             metadata['rebuild_request_id'] = request
         stage_resume.verified_publish(audio, metadata, episodes, day, verify.check_episode)
-    for old in sorted(episodes.glob('????-??-??.mp3'))[:-7]:
-        old.unlink(missing_ok=True)
-        old.with_suffix('.json').unlink(missing_ok=True)
     print('Generated reviewed Work episode:', day, duration, 'seconds; Gemini calls: 0')
     return metadata
 

@@ -504,9 +504,6 @@ def main():
         except ModuleNotFoundError:
             import verify
         stage_resume.verified_publish(audio, metadata, EP, TODAY, verify.check_episode)
-    for old in sorted(EP.glob('????-??-??.mp3'))[:-7]:
-        old.unlink(missing_ok=True)
-        old.with_suffix('.json').unlink(missing_ok=True)
     print('Generated', EP / f'{TODAY}.mp3', duration)
 
 if __name__=='__main__':
