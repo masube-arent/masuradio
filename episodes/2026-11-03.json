@@ -1,0 +1,261 @@
+{
+  "date": "2026-11-03",
+  "title": "AIツール、安全に使いこなす！賢い設定で業務改善",
+  "episode_title": "AIツール、安全に使いこなす！賢い設定で業務改善",
+  "duration_seconds": 797,
+  "audio": "episodes/2026-11-03.mp3",
+  "sources": [
+    {
+      "source": "Claude Code",
+      "title": "v2.1.317",
+      "url": "https://github.com/anthropics/claude-code/releases/tag/v2.1.317",
+      "date": "2026-11-03",
+      "summary": " What's changed Added a warning to /schedule when a new cloud scheduled task gets connectors you did not ask for, with how to remove them Added a check that asks before a web or shell tool call sends your account email address to the network Added onFailure: \"block\" for Agent SDK hook callbacks, so a callback that fails blocks the action instead of letting it run Added a notice in Claude Desktop's Code tab when your organization's remote managed settings haven't loaded for the session, and another once they do Added a notice when auto mode's ch"
+    },
+    {
+      "source": "GitHub",
+      "title": "Security risk assessments include repository protection status",
+      "url": "https://github.blog/changelog/2026-11-02-security-risk-assessments-include-repository-protection-status",
+      "date": "2026-11-02",
+      "summary": " The GitHub code security risk assessment and secret risk assessment now show whether findings are in protected or unprotected repositories, helping you identify where to extend your security coverage. Organization&#8230; The post Security risk assessments include repository protection status appeared first on The GitHub Blog . "
+    },
+    {
+      "source": "GitHub",
+      "title": "pull_request_target blocked by default December 2",
+      "url": "https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2",
+      "date": "2026-11-02",
+      "summary": " Starting December 2, 2026, GitHub Actions will block pull_request_target events by default in all public repositories, unless an applicable Actions event policy explicitly allows them. Enforcement was previously scheduled for&#8230; The post pull_request_target blocked by default December 2 appeared first on The GitHub Blog . "
+    },
+    {
+      "source": "Claude Code",
+      "title": "v2.1.316",
+      "url": "https://github.com/anthropics/claude-code/releases/tag/v2.1.316",
+      "date": "2026-10-31",
+      "summary": " What's changed Added CLAUDE_CODE_DISABLE_ULTRATHINK , which turns the ultrathink keyword off Added pooled group budgets to the Claude apps gateway: one monthly budget that a group's members share, on top of each member's own limit, set with pooled_budget on the spend limits admin API Added CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP to keep system cross-certificates that certify each other in a loop, for servers whose private CA needs one Added CLAUDE_CODE_SUBAGENT_EFFORT to set the effort level subagents run at when nothing else names one, ins"
+    },
+    {
+      "source": "Google AI",
+      "title": "The latest AI news we announced in October 2026",
+      "url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-october-2026/",
+      "date": "2026-11-02",
+      "summary": "Animated carousel of images from AI posts in October"
+    },
+    {
+      "source": "OpenAI",
+      "title": "Scaling Git at OpenAI",
+      "url": "https://openai.com/index/scaling-git-at-openai",
+      "date": "2026-11-02",
+      "summary": "How OpenAI built Pando, a Git-compatible backend designed for the scale of development that Codex makes possible."
+    },
+    {
+      "source": "OpenAI",
+      "title": "Introducing the Grid Protectors Program",
+      "url": "https://openai.com/index/grid-protectors-program",
+      "date": "2026-11-02",
+      "summary": "OpenAI’s Grid Protectors Program will work with utilities to help future compute campuses support grid reliability and protect consumer electricity costs."
+    },
+    {
+      "source": "DeepMind",
+      "title": "Speeding up planning decisions with AI",
+      "url": "https://deepmind.google/blog/speeding-up-planning-decisions-with-ai/",
+      "date": "2026-10-30",
+      "summary": "Google DeepMind and UK government work together to reduce planning assessment times"
+    }
+  ],
+  "featured_sources": [
+    {
+      "source": "Claude Code",
+      "title": "v2.1.317",
+      "url": "https://github.com/anthropics/claude-code/releases/tag/v2.1.317",
+      "date": "2026-11-03",
+      "summary": " What's changed Added a warning to /schedule when a new cloud scheduled task gets connectors you did not ask for, with how to remove them Added a check that asks before a web or shell tool call sends your account email address to the network Added onFailure: \"block\" for Agent SDK hook callbacks, so a callback that fails blocks the action instead of letting it run Added a notice in Claude Desktop's Code tab when your organization's remote managed settings haven't loaded for the session, and another once they do Added a notice when auto mode's ch"
+    },
+    {
+      "source": "GitHub",
+      "title": "Security risk assessments include repository protection status",
+      "url": "https://github.blog/changelog/2026-11-02-security-risk-assessments-include-repository-protection-status",
+      "date": "2026-11-02",
+      "summary": " The GitHub code security risk assessment and secret risk assessment now show whether findings are in protected or unprotected repositories, helping you identify where to extend your security coverage. Organization&#8230; The post Security risk assessments include repository protection status appeared first on The GitHub Blog . "
+    },
+    {
+      "source": "GitHub",
+      "title": "pull_request_target blocked by default December 2",
+      "url": "https://github.blog/changelog/2026-11-02-pull_request_target-blocked-by-default-december-2",
+      "date": "2026-11-02",
+      "summary": " Starting December 2, 2026, GitHub Actions will block pull_request_target events by default in all public repositories, unless an applicable Actions event policy explicitly allows them. Enforcement was previously scheduled for&#8230; The post pull_request_target blocked by default December 2 appeared first on The GitHub Blog . "
+    },
+    {
+      "source": "Claude Code",
+      "title": "v2.1.316",
+      "url": "https://github.com/anthropics/claude-code/releases/tag/v2.1.316",
+      "date": "2026-10-31",
+      "summary": " What's changed Added CLAUDE_CODE_DISABLE_ULTRATHINK , which turns the ultrathink keyword off Added pooled group budgets to the Claude apps gateway: one monthly budget that a group's members share, on top of each member's own limit, set with pooled_budget on the spend limits admin API Added CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP to keep system cross-certificates that certify each other in a loop, for servers whose private CA needs one Added CLAUDE_CODE_SUBAGENT_EFFORT to set the effort level subagents run at when nothing else names one, ins"
+    },
+    {
+      "source": "Google AI",
+      "title": "The latest AI news we announced in October 2026",
+      "url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-october-2026/",
+      "date": "2026-11-02",
+      "summary": "Animated carousel of images from AI posts in October"
+    },
+    {
+      "source": "OpenAI",
+      "title": "Scaling Git at OpenAI",
+      "url": "https://openai.com/index/scaling-git-at-openai",
+      "date": "2026-11-02",
+      "summary": "How OpenAI built Pando, a Git-compatible backend designed for the scale of development that Codex makes possible."
+    },
+    {
+      "source": "OpenAI",
+      "title": "Introducing the Grid Protectors Program",
+      "url": "https://openai.com/index/grid-protectors-program",
+      "date": "2026-11-02",
+      "summary": "OpenAI’s Grid Protectors Program will work with utilities to help future compute campuses support grid reliability and protect consumer electricity costs."
+    },
+    {
+      "source": "DeepMind",
+      "title": "Speeding up planning decisions with AI",
+      "url": "https://deepmind.google/blog/speeding-up-planning-decisions-with-ai/",
+      "date": "2026-10-30",
+      "summary": "Google DeepMind and UK government work together to reduce planning assessment times"
+    }
+  ],
+  "script": [
+    {
+      "speaker": "NANA",
+      "text": "皆さん、おはようございます！火曜日の朝、いかがお過ごしですか？ MASURADIO 88.8、パーソナリティのNANAがお届けします。今日もAIの最新情報と、皆さんの仕事に役立つヒントをたっぷりご紹介していきますよ！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "時刻は2026年11月3日、火曜日です。火曜日は「使えるAIサービス・仕事術」がテーマ。最新AIアプリの活用法や、業務を楽にするヒントに焦点を当てています。皆さんの生産性向上に貢献できれば嬉しいです！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さて、今日のMASURADIO 88.8、エピソードタイトルは「AIツール、安全に使いこなす！賢い設定で業務改善」としました。AIツールは便利ですが、意図しない動作にヒヤリとすることも。今日はそんな「うっかり」を防ぎ、安全にAIを活用する最新情報をお届けします。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "まず注目は、Anthropic社のAIアシスタント「Claude Code」のアップデートです。今日、2026年11月3日にリリースされたv2.1.317では、セキュリティとユーザーコントロール機能が強化されました。クラウドタスクの予期せぬコネクタ追加時の警告や、ウェブツールがメールアドレスを送信する前の確認機能などです。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "これ、本当に大事ですよね！AIが勝手に個人情報を送っちゃうなんてゾッとします。なんでもAIにお任せ！って言っても、最後の確認は人間の仕事。まさに「AIの暴走は私が止める！」って感じでしょうか。ユーザーが意図しない動作を防ぐ細やかな配慮が嬉しいですね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "そしてもう一つ、皆さんのコードを守るための重要なニュースも。昨日、2026年11月2日付けでGitHubから発表された情報です。「セキュリティリスク評価にリポジトリ保護ステータスが含まれるようになった」とのこと。セキュリティ問題が保護されているかどうかが、一目でわかるんです。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "これは、組織全体のセキュリティ対策強化に非常に役立ちます。どこに手薄な部分があるのか、どこを優先すべきか、明確になりますよね。開発者の方々には、自分の書いたコードを守る、強力な味方になってくれるはずです。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さあ、今日のオープニングでは、AIを安全に賢く使うためのClaude Code最新機能と、GitHubのセキュリティ強化について、手短にご紹介しました。この後、詳細や具体的な活用例は次のパートでじっくりお話ししていきますよ。どうぞお楽しみに！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "MASURADIO 88.8、特集本編のお時間です！火曜のテーマは『使えるAIサービス・仕事術』。今回は、AI開発・運用における『安全性』と『透明性』を強化する最新アップデートに注目。まずはClaude Codeの機能から掘り下げます。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "Claude Codeでは、クラウドのスケジュールタスクで意図しないコネクタ追加の警告や、ウェブ・シェルツール利用時にアカウントのメールアドレスがネットワークに送信される可能性があった場合の確認を促すようになりました。プライバシー保護や設定ミス防止に直結する、ユーザーに寄り添った機能です。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さらに、Agent SDKのフックコールバックに`onFailure: \"block\"`オプションが追加。もしコールバックが失敗したら、その後のアクションをブロックする安全弁です。AIエージェントが暴走しちゃうなんて、漫画の世界だけ？ いやいや、予期せぬ挙動を防ぐ堅実な対策、これは本当にありがたい！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "Claude DesktopのCodeタブには、リモート管理設定の読み込み状況を知らせる通知も加わり、透明性が向上。そして、この『見える化』の流れはGitHubのセキュリティアップデートにも通じます。リスク評価に『リポジトリの保護ステータス』が含まれるようになりました。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "これは、脆弱性やシークレット漏洩が見つかった際、それが『保護されたリポジトリ』にあるのか、『保護されていないリポジトリ』にあるのかが一目でわかる、ということ。保護されたリポジトリは、レビュー必須など追加のセキュリティ対策が施されているため、リスクの緊急度判断に重要です。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "この情報があれば、セキュリティチームはよりリスクの高い箇所から優先的に対応できますし、どのリポジトリの保護を強化すべきか、セキュリティカバレッジを広げるべき場所も明確になります。開発プロセス全体のセキュリティレベルを底上げする、賢いアップデートと言えるでしょう。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "今日の特集でご紹介したのは、AIツールが単に便利になるだけでなく、より賢く、そして安全に私たちをサポートするための進化の形。Claude Codeの細やかな警告や、GitHubの精度の高いリスク評価は、AIを活用するすべての人にとって心強い味方。MASURADIO 88.8は、皆さんのAIライフを豊かにする情報をお届けしていきますよ！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さて、MASURADIO 88.8、火曜日のこの時間は「別角度の話題」です。前半のAIニュースとはまた違った切り口で、皆さんの仕事や日常に役立つAIサービスや、その裏側を支える技術に注目していきますよ。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "まずは、AI開発の現場で非常に大切なセキュリティの話から。GitHubが11月2日、`pull_request_target`というイベントのデフォルトブロックを12月2日から開始すると発表しました。公開リポジトリでのセキュリティリスクを減らすための重要な変更なんです。AIがコードを生成する時代だからこそ、セキュリティはより一層意識したいところですね。開発者さんには朗報なはず！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "続いては、AIサービスの運用を楽にする工夫に目を向けましょう。AnthropicのClaude Codeが10月31日にリリースしたバージョン2.1.316で、「pooled group budgets」という機能が追加されました。チームメンバーが共有できる月間予算を設定できるもので、グループ全体の利用状況を管理しやすくなるんです。AIツールを組織で使う時、予算管理って意外と手間ですよね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "同じくClaude Codeのアップデートでは、`CLAUDE_CODE_DISABLE_ULTRATHINK`というキーワードが追加されました。これを使うと、AIの「ウルトラシンク」機能をオフにできるんです。サブエージェントの作業レベルを設定できる`CLAUDE_CODE_SUBAGENT_EFFORT`も。AIの思考プロセスや働き方をより細かく制御できるようになったということ。AIに仕事を任せっぱなしにするのではなく、賢く使いこなすための、まさに「仕事術」ですよね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さて、目線を少し広げてみましょう。Google AIも11月2日に、10月のAIニュースをまとめた発表を行っています。具体的な新機能というよりは、この1ヶ月間も様々な分野でAIの進化が止まらなかった、という総括ですね。医療からエンターテインメントまで、GoogleのAIは私たちの生活に浸透しつつあります。これからもどんな便利なサービスが生まれるのか、本当に楽しみです！"
+    },
+    {
+      "speaker": "NANA",
+      "text": "そして、AI開発の「裏方」にも目を向けてみましょう。OpenAIが11月2日に「Scaling Git at OpenAI」と題した記事を公開しました。これは、Codexのような大規模なAI開発を支えるために、「Pando」というGit互換のバックエンドシステムを自社で構築した話なんです。私たちが日々利用するAIツールが、安定して進化し続けられるのは、こうした目に見えない地道なインフラ整備があるからこそなんですよね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "GitHubのセキュリティ強化から、Claude Codeのきめ細かい管理機能、そしてOpenAIの巨大な開発を支えるインフラまで。今日の「別角度の話題」では、AIを「使う」だけでなく、「管理し」「支える」技術にも光を当ててみました。AIは魔法の道具ではありません。賢く安全に、そして効率的に活用していくための工夫や裏方の努力があってこそ、私たちの仕事や生活を豊かにしてくれるんですね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さて、いよいよ実践コーナーへようこそ！今日はお仕事や日常生活でAIをもっと身近に感じて、すぐに試せるヒントをいくつかご紹介しますね。難しく考える必要はありません。ちょっとした工夫で、日々のタスクがぐっと楽になるはずです。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "まず一つ目は、情報収集と要約の効率化です。皆さん、長いレポートやニュース記事を読むのに時間がかかっていませんか？AIチャットボットに「この文章を300字で要約して」と頼んでみてください。大量の情報を短時間でインプットでき、要点だけを素早く把握できますよ。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "さらに、特定の情報だけを抜き出すことも得意です。「この顧客レビューの中から、サービス改善に関する意見だけをリストアップして」といった具合に指示すると、必要な情報だけをピンポイントで抽出してくれます。これでもう、大海原から真珠を探すような手間はかかりませんね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "二つ目のヒントは、AIを「アイデアの壁打ち相手」として活用することです。企画書で行き詰まった時や、新しいプロジェクトのネーミングに悩んだ時など、「〇〇のテーマで、斬新なアイデアを5つ提案して」と問いかけてみましょう。自分では思いつかない視点や切り口を提供してくれることがあります。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "AIが完璧な答えをくれるわけではありませんが、思考のきっかけとしては最高です。まるで優秀なブレインストーミングパートナーが24時間体制で待機しているようなもの。全部AIに任せちゃえばいい？ いやいや、最終的な取捨選択と肉付けは、私たち人間のクリエイティビティにかかっていますよ！ そこが楽しいんですから。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "そして三つ目は、日々のルーティンワークを見直して、AIに任せられる部分がないか考えてみることです。例えば、定型的なメールの作成、会議の議事録の下書き、データ入力の補助など。ちょっとした繰り返し作業でも、AIに手伝ってもらうことで、まとまった時間を生み出せます。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "「でも、どうやってAIにやらせるの？」と思う方もいるかもしれませんね。まずは、普段使っているチャットAIに「〇〇のようなメールの例文を作って」と頼むことから始めてみてください。意外なほどスムーズに、あなたの意図を汲んだ下書きを生成してくれますよ。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "AIは私たちの仕事を奪うものではなく、むしろ強力なパートナーになり得ます。今日ご紹介したような小さな一歩からで大丈夫。ぜひ、日々の業務や生活の中にAIを上手に取り入れて、新しい働き方、新しい時間の使い方を見つけてみてくださいね。"
+    },
+    {
+      "speaker": "NANA",
+      "text": "MASURADIO 88.8、火曜日の実践コーナー、担当はNANAでした。来週もまた、皆さんのAIライフを豊かにする情報をお届けします。どうぞお楽しみに！"
+    }
+  ],
+  "topics": [
+    "火曜：使えるAIサービス・仕事術"
+  ],
+  "host": "NANA",
+  "gemini_usage": {
+    "prompt_tokens": 8091,
+    "output_tokens": 3276,
+    "thinking_tokens": 26029,
+    "total_tokens": 37396,
+    "api_calls": 5,
+    "estimated_usd": 0.07569
+  }
+}
