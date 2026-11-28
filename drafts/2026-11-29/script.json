@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "broadcast_date": "2026-11-29",
+  "timezone": "Asia/Tokyo",
+  "script_id": "masuradio-20261129-work-v1",
+  "episode_title": "PDFと一覧、同じ版かを確かめる",
+  "chapters": [
+    {
+      "title": "一回の取得でも、同じ瞬間とは限らない",
+      "role": "report",
+      "sources": [
+        {
+          "source": "Cloudflare",
+          "title": "Capture PDFs, links, scraped elements, and extracted JSON with /snapshot",
+          "url": "https://developers.cloudflare.com/changelog/post/2026-11-19-snapshot-all-formats/",
+          "article_published_date": "2026-11-19",
+          "retrieved_at": "2026-11-28T20:16:46.358Z",
+          "evidence_status": "body",
+          "section_heading": "Capture PDFs, links, scraped elements, and extracted JSON with /snapshot",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "from a single page load"
+            },
+            {
+              "id": "e2",
+              "text": "any format that fails fails the whole request"
+            },
+            {
+              "id": "e3",
+              "text": "at least two distinct formats"
+            },
+            {
+              "id": "e4",
+              "text": "the request incurs Workers AI usage"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "おはようございます、ナナです。AIにページの要約を任せたら、添付のPDFと一覧の件数が違う。どっちを信じますか。十一月十九日、クラウドフレアは、ブラウザーランのスナップショットが、一回のページ読み込みから、PDF、リンク一覧、指定した要素、それにAIで抽出したジェイソンも返せるようになったと発表しました。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "ここで大事なのは、一回の読み込みと、同じ瞬間は別だということです。取得する順番は決まっていて、PDFは最後です。途中でページの状態が変わることがあります。また、指定した形式のどれかが失敗すると、リクエスト全体が失敗します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "この機能では、異なる形式を最低二つ指定します。ひとつで足りるなら、その形式専用の機能を使います。たとえばPDFだけを残す場合と、PDFを残しつつ、ページから項目を取り出す場合で、使い分けられます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "ジェイソンを選ぶと、ページから項目を抜き出す処理にワーカーズAIを使い、その利用量が発生します。単に表の決まった箇所からテキストを取るだけなら、要素の取得という選択肢もあります。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 0,
+          "excerpt_id": "S1E1"
+        },
+        {
+          "segment_index": 1,
+          "excerpt_id": "S1E2"
+        },
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E3"
+        },
+        {
+          "segment_index": 3,
+          "excerpt_id": "S1E4"
+        }
+      ],
+      "story_points": [
+        {
+          "source_url": "https://developers.cloudflare.com/changelog/post/2026-11-19-snapshot-all-formats/",
+          "segment_indices": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "title": "DXハック：版番号と備品番号で照合",
+      "role": "practice",
+      "sources": [
+        {
+          "source": "Cloudflare",
+          "title": "/snapshot - Capture multiple page formats",
+          "url": "https://developers.cloudflare.com/browser-run/quick-actions/snapshot/",
+          "article_published_date": null,
+          "retrieved_at": "2026-11-28T20:16:46.358Z",
+          "evidence_status": "body",
+          "section_heading": "Choose which formats to return",
+          "evidence_excerpts": [
+            {
+              "id": "e1",
+              "text": "a live page can change between captures"
+            },
+            {
+              "id": "e2",
+              "text": "elements (required)"
+            }
+          ]
+        }
+      ],
+      "segments": [
+        {
+          "speaker": "NANA",
+          "text": "ここからは番組の活用提案です。ページの記録をAIに渡す前に、二つの出力が同じ版を指しているか確かめます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "題材は業務データではなく、架空の備品一覧です。印刷にも出る位置に版番号を置き、各行に備品番号を振ります。版はアールスリー、備品番号はゼロイチとゼロニの二行、と決めておきます。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "PDFと要素の取得を頼み、要素を取る場合は、版番号と備品の行を指定するセレクターを渡します。受け取ったPDFでは、印刷された版番号と備品番号を読みます。要素の出力では、同じ版番号と備品番号を抜き出します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "見るのは、版番号、行数、備品番号の組み合わせです。たとえば両方が二行でも、PDFがゼロイチとゼロニで、要素の出力がゼロイチとゼロサンなら不一致です。逆に、これらが一致しても、価格や注記まで同じとはまだ言えません。必要なら確認欄に足します。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "不一致や片方の欠落があれば、AIには差を報告するところまで頼み、台帳への登録は止めます。変更が止まった状態で両方を取り直すか、意図した印刷用の違いなのかを人が見ます。片方の記録を前回分で埋めない、というルールです。"
+        },
+        {
+          "speaker": "NANA",
+          "text": "同じ取得の依頼から出てきたからといって、同じ内容だとは限りません。記録を次の仕事に使う前に、まず何が一致すれば渡してよいかを決めておきましょう。"
+        }
+      ],
+      "claims": [
+        {
+          "segment_index": 2,
+          "excerpt_id": "S1E2"
+        }
+      ],
+      "story_points": [],
+      "practice": {
+        "target": "題材は業務データではなく、架空の備品一覧です。印刷にも出る位置に版番号を置き、各行に備品番号を振ります。版はアールスリー、備品番号はゼロイチとゼロニの二行、と決めておきます。",
+        "action": "PDFと要素の取得を頼み、要素を取る場合は、版番号と備品の行を指定するセレクターを渡します。受け取ったPDFでは、印刷された版番号と備品番号を読みます。要素の出力では、同じ版番号と備品番号を抜き出します。",
+        "check": "見るのは、版番号、行数、備品番号の組み合わせです。たとえば両方が二行でも、PDFがゼロイチとゼロニで、要素の出力がゼロイチとゼロサンなら不一致です。逆に、これらが一致しても、価格や注記まで同じとはまだ言えません。必要なら確認欄に足します。",
+        "stop": "不一致や片方の欠落があれば、AIには差を報告するところまで頼み、台帳への登録は止めます。変更が止まった状態で両方を取り直すか、意図した印刷用の違いなのかを人が見ます。片方の記録を前回分で埋めない、というルールです。"
+      }
+    }
+  ]
+}
